@@ -34,11 +34,38 @@ def get_default_config() -> Dict[str, Any]:
                 "table_name": "sales_data_2025"
             },
             "snowflake": {
+                "type": "snowflake",
+                "auto_connect": true,
+                "account": "your_account.snowflakecomputing.com",
+                "user": "your_username",
+                "password": "your_password",
                 "role": "ANALYST",
                 "warehouse": "COMPUTE_WH",
-                "database": "HACKATHON_DB"
+                "database": "HACKATHON_DB",
+                "schema": "PUBLIC",
+                "table_name": "LOADED_DATA"
+            },
+            "postgres": {
+                "type": "postgres",
+                "host": "localhost",
+                "port": 5432,
+                "database": "mydb",
+                "user": "postgres",
+                "password": "your_password",
+                "schema": "public",
+                "table_name": "loaded_data"
+            },
+            "mysql": {
+                "type": "mysql",
+                "host": "localhost",
+                "port": 3306,
+                "database": "mydb",
+                "user": "root",
+                "password": "your_password",
+                "table_name": "loaded_data"
             },
             "excel": {
+                "type": "excel",
                 "output_dir": "./client_exports/"
             }
         }
