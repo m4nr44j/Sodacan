@@ -89,7 +89,6 @@ def main():
     """sodacan: The AI Data Workbench"""
     pass
 
-chat = start_soda_chat_session()
 
 @app.command()
 def shell() -> None:
@@ -103,6 +102,7 @@ def cli():
 
 
 if __name__ == "__main__":
+    chat = start_soda_chat_session()
     cli()
     while True: 
 
