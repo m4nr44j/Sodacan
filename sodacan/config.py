@@ -35,7 +35,7 @@ def get_default_config() -> Dict[str, Any]:
             },
             "snowflake": {
                 "type": "snowflake",
-                "auto_connect": true,
+                "auto_connect": True,
                 "account": "your_account.snowflakecomputing.com",
                 "user": "your_username",
                 "password": "your_password",
@@ -67,6 +67,16 @@ def get_default_config() -> Dict[str, Any]:
             "excel": {
                 "type": "excel",
                 "output_dir": "./client_exports/"
+            }
+        },
+        "tasks": {
+            "categorize_transaction": {
+                "prompt_template": (
+                    "You are a finance expert. Categorize the transaction described below "
+                    "into a high-level expense category. Provide only the category name.\n\n"
+                    "{row}"
+                ),
+                "output_field": "category"
             }
         }
     }
@@ -166,4 +176,17 @@ def get_sink_config(sink_name: str) -> Optional[Dict[str, Any]]:
     config = load_config()
     sinks = config.get("sinks", {})
     return sinks.get(sink_name)
+
+
+def get_task_config(task_name: str) -> Optional[Dict[str, Any]]:
+    """Return the task configuration for the given task identifier."""
+    config = load_config()
+    tasks = config.get("tasks", {})
+    task_config = tasks.get(task_name)
+    if isinstance(task_config, dict):
+        return task_config
+    if isinstance(task_config, str):
+        # Allow simple string prompts for quick tasks
+        return {"prompt_template": task_config, "output_field": "task_output"}
+    return None
 
