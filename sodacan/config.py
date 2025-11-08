@@ -67,6 +67,19 @@ def get_default_config() -> Dict[str, Any]:
             "excel": {
                 "type": "excel",
                 "output_dir": "./client_exports/"
+            },
+            "googlesheets": {
+                "type": "googlesheets",
+                "spreadsheet_id": "your_spreadsheet_id_here",
+                "worksheet_name": "Sheet1",
+                "credentials_path": "./path/to/service-account.json"
+            },
+            "gcs": {
+                "type": "gcs_parquet",
+                "bucket_name": "your-bucket-name",
+                "blob_path": "data/export.parquet",
+                "project_id": "your-gcp-project-id",
+                "credentials_path": "./path/to/service-account.json"
             }
         },
         "tasks": {

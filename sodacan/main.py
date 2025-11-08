@@ -89,8 +89,6 @@ def main():
     """sodacan: The AI Data Workbench"""
     pass
 
-chat = start_soda_chat_session()
-
 @app.command()
 def shell() -> None:
     """Open the sodacan interactive shell."""
@@ -104,8 +102,8 @@ def cli():
 
 if __name__ == "__main__":
     cli()
+    chat = start_soda_chat_session()
     while True: 
-
         user_input = input("(soda) > ")
         if user_input.lower() in ['exit', 'quit']:
             break
