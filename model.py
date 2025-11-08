@@ -5,7 +5,6 @@ from IPython.display import Markdown, HTML, Image, display
 
 
 API_KEY = os.environ.get("GEMINI_API_KEY")
-client = genai.Client(api_key =API_KEY )
 
 prompt = """
 You are a specialized Python code-generation AI. You function as a "micro-service"
@@ -39,19 +38,25 @@ CRITICAL RULES:
 
 def start_soda_chat_session(): 
 
-    API_KEY = os.environ.get("GEMINI_API_KEY")
-    if not API_KEY: 
+   API_KEY = os.environ.get("GEMINI_API_KEY")
+   if not API_KEY: 
         raise ValueError(
             "Error: GOOGLE_API_KEY environment variable not set.\n"
             "Please set the key (e.g., 'export GOOGLE_API_KEY=your_key_here')")
-    model = genai.GenerativeModel(
-    model="gemini-2.5-pro-exp-03-25",
-    config=types.GenerateContentConfig(
-        tools=[types.Tool(code_execution=types.ToolCodeExecution)]
+   genai.configure(api_key=API_KEY)
+
+
+   model = genai.GenerativeModel(
+   model="gemini-2.5-pro-exp-03-25",
+   config=types.GenerateContentConfig(
+      tools=[types.Tool(code_execution=types.ToolCodeExecution)]
     ),)
 
-    chat_session = model.start_chat()
-    print("Model initialized. SodaBot is ready.")
+   chat_session = model.start_chat()
+   print("Model initialized. SodaBot is ready.")
 
-    return chat_session
+   return chat_session
 
+
+if __name__ == "__main__":
+   start_soda_chat_session()
