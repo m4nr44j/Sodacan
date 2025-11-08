@@ -1,7 +1,7 @@
 """AI integration for sodacan."""
 
 import os
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from rich.console import Console
 
@@ -129,5 +129,53 @@ Return the pandas code to execute:"""
         return code.strip()
     except Exception as e:
         console.print(f"[red]✗[/red] Error calling Gemini: {e}")
+        return None
+
+
+class _SafeDict(dict):
+    """A dict that returns an empty string for missing keys when formatting."""
+
+    def __missing__(self, key: str) -> str:  # pragma: no cover - formatting safeguard
+        return ""
+
+
+def run_task_prompt(task_config: Dict[str, Any], payload: Dict[str, Any], config: Dict[str, Any]) -> Optional[str]:
+    """Execute an AI task using the provided payload."""
+    prompt_template = task_config.get("prompt_template")
+    if not prompt_template:
+        console.print("[red]✗[/red] Task configuration missing 'prompt_template'.")
+        return None
+
+    context = _SafeDict({**payload})
+    context.setdefault(
+        "row",
+        "\n".join(f"{key}: {value}" for key, value in payload.items()),
+    )
+
+    try:
+        prompt = prompt_template.format_map(context)
+    except Exception as exc:  # pragma: no cover - formatting safeguard
+        console.print(f"[red]✗[/red] Error formatting prompt: {exc}")
+        return None
+
+    if not configure_gemini():
+        return None
+
+    model_name = task_config.get("model") or config.get("ai", {}).get("model", "gemini-1.5-pro")
+
+    try:
+        model = genai.GenerativeModel(model_name)
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=task_config.get("temperature", 0.2),
+            ),
+        )
+        text = (response.text or "").strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("\n", 1)[0]
+        return text.strip()
+    except Exception as exc:  # pragma: no cover - runtime safety
+        console.print(f"[red]✗[/red] Error calling Gemini: {exc}")
         return None
 

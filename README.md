@@ -42,11 +42,13 @@ sodacan build --interactive messy_dump.csv
 - `sodacan config init` - Create a new config file
 - `sodacan config view` - View current configuration
 - `sodacan config set <key> <value>` - Set a config value (e.g., `sodacan config set sinks.snowflake.role SYSADMIN`)
+- `sodacan config set tasks.categorize_transaction.prompt_template "Prompt text"` - Update AI task templates used by `watch`
 
 ### Data Operations
 
 - `sodacan ingest <source> <sink>` - Quick ingest from source to sink
 - `sodacan build --interactive <source>` - Interactive REPL for data cleaning
+- `sodacan watch --source <path> --sink <name> --task <id>` - Monitor a live source and stream AI-enriched results to a sink
 
 ## 🎯 Demo Flow
 

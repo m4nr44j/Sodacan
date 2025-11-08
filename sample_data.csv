@@ -1,0 +1,12 @@
+SALE_AMT,Customer Name,Date,Region,Status
+1250.50,John Smith,2024-01-15,North,Active
+,Alice Johnson,2024-02-20,South,Active
+3450.75,Bob Williams,2024-03-10,East,
+2100.00,Carol Davis,2024-04-05,West,Active
+,David Brown,2024-05-12,North,Inactive
+5678.90,Eve Wilson,2024-06-18,South,Active
+890.25,Frank Miller,2024-07-22,East,Active
+1234.56,Grace Lee,2024-08-30,West,
+4567.89,Henry Taylor,2024-09-14,North,Active
+,Isabel Garcia,2024-10-08,South,Inactive
+

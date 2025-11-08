@@ -1,0 +1,17 @@
+ai:
+  model: gemini-1.5-pro
+  default_prompt: You are an expert data engineer. Transform user requests into clean,
+    efficient pandas operations.
+source_defaults:
+  csv_encoding: utf-8
+sinks:
+  powerbi:
+    type: sqlite
+    database_file: ./prod_dashboard.db
+    table_name: sales_data_2025
+  snowflake:
+    role: ANALYST
+    warehouse: COMPUTE_WH
+    database: HACKATHON_DB
+  excel:
+    output_dir: ./client_exports/

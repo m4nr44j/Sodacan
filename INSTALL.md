@@ -40,6 +40,7 @@ This creates a `sodacan.yaml` file in your current directory.
 
 ```bash
 sodacan --help
+sodacan watch --help
 ```
 
 ## Development Mode
