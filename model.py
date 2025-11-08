@@ -1,12 +1,10 @@
-import os 
-from google import genai 
-from google.genai import types
+import os
+from dotenv import load_dotenv   
 import google.generativeai as genai
-from google.generativeai.types import GenerationConfig
-from IPython.display import Markdown, HTML, Image, display 
+from google.generativeai.types import GenerationConfig 
 
-
-API_KEY = os.environ.get("GEMINI_API_KEY")
+load_dotenv()
+API_KEY = os.getenv("GEMINI_API_KEY")
 
 prompt = """
 You are a specialized Python code-generation AI. You function as a "micro-service"
@@ -52,7 +50,7 @@ GENERATION_CONFIG = GenerationConfig(
 
 def start_soda_chat_session(): 
 
-   API_KEY = os.environ.get("GEMINI_API_KEY")
+   #API_KEY = os.environ.get("GEMINI_API_KEY")
    if not API_KEY: 
         raise ValueError(
             "Error: GOOGLE_API_KEY environment variable not set.\n"
@@ -60,12 +58,12 @@ def start_soda_chat_session():
    
    genai.configure(api_key=API_KEY)
 
-
    model = genai.GenerativeModel(
-   model="gemini-2.5-pro-exp-03-25",
-  safety_settings=CODE_GENERATION_SAFETY_SETTINGS,
-        generation_config=GENERATION_CONFIG,
-        system_instruction=prompt)
+       model_name="gemini-2.5-flash",
+       safety_settings=CODE_GENERATION_SAFETY_SETTINGS,
+       generation_config=GENERATION_CONFIG,
+       system_instruction=prompt
+   )
 
    chat_session = model.start_chat()
    print("Model initialized. SodaBot is ready.")
