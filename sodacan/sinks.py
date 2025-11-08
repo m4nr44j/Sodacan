@@ -23,6 +23,22 @@ try:
 except ImportError:
     SQLALCHEMY_AVAILABLE = False
 
+# Try importing Google services
+try:
+    import gspread
+    from google.oauth2.service_account import Credentials
+    GSPREAD_AVAILABLE = True
+except ImportError:
+    GSPREAD_AVAILABLE = False
+
+try:
+    from google.cloud import storage
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    GCS_AVAILABLE = True
+except ImportError:
+    GCS_AVAILABLE = False
+
 
 def save_to_sqlite(df: pd.DataFrame, database_file: str, table_name: str) -> bool:
     """Save DataFrame to SQLite database."""
@@ -357,6 +373,119 @@ TRUNCATE TABLE IF EXISTS {table};
     return sql
 
 
+def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsheet_id: str, worksheet_name: str) -> bool:
+    """Save DataFrame directly to Google Sheets."""
+    if not GSPREAD_AVAILABLE:
+        console.print("[red]✗[/red] gspread not installed. Run: pip install gspread google-auth-oauthlib")
+        return False
+    
+    # Get credentials
+    credentials_path = sink_config.get('credentials_path')
+    credentials_json = sink_config.get('credentials_json')  # For inline JSON
+    
+    if not credentials_path and not credentials_json:
+        console.print("[red]✗[/red] Google Sheets credentials missing. Set credentials_path or credentials_json in config.")
+        return False
+    
+    try:
+        # Authenticate
+        if credentials_path:
+            # Use service account file
+            creds = Credentials.from_service_account_file(
+                credentials_path,
+                scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+            )
+        else:
+            # Use inline JSON
+            import json
+            creds = Credentials.from_service_account_info(
+                json.loads(credentials_json),
+                scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+            )
+        
+        client = gspread.authorize(creds)
+        
+        console.print(f"[dim]Opening spreadsheet {spreadsheet_id}...[/dim]")
+        spreadsheet = client.open_by_key(spreadsheet_id)
+        
+        # Get or create worksheet
+        try:
+            worksheet = spreadsheet.worksheet(worksheet_name)
+            console.print(f"[dim]Using existing worksheet: {worksheet_name}[/dim]")
+        except gspread.exceptions.WorksheetNotFound:
+            console.print(f"[dim]Creating new worksheet: {worksheet_name}[/dim]")
+            worksheet = spreadsheet.add_worksheet(title=worksheet_name, rows=len(df)+1, cols=len(df.columns))
+        
+        # Clear existing data
+        worksheet.clear()
+        
+        # Write headers
+        headers = df.columns.tolist()
+        worksheet.append_row(headers)
+        
+        # Write data in batches
+        console.print(f"[dim]Writing {len(df)} rows to Google Sheets...[/dim]")
+        batch_size = 100
+        for i in range(0, len(df), batch_size):
+            batch = df.iloc[i:i+batch_size]
+            values = batch.values.tolist()
+            worksheet.append_rows(values)
+        
+        console.print(f"[green]✓[/green] Successfully wrote {len(df)} rows to Google Sheets: {spreadsheet.title} > {worksheet_name}")
+        console.print(f"[dim]Spreadsheet URL: https://docs.google.com/spreadsheets/d/{spreadsheet_id}[/dim]")
+        return True
+        
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error writing to Google Sheets: {e}")
+        return False
+
+
+def save_to_gcs_parquet(df: pd.DataFrame, sink_config: Dict[str, Any], bucket_name: str, blob_path: str) -> bool:
+    """Save DataFrame to Google Cloud Storage as Parquet file."""
+    if not GCS_AVAILABLE:
+        console.print("[red]✗[/red] google-cloud-storage or pyarrow not installed.")
+        console.print("[dim]Run: pip install google-cloud-storage pyarrow[/dim]")
+        return False
+    
+    # Get credentials
+    credentials_path = sink_config.get('credentials_path')
+    project_id = sink_config.get('project_id')
+    
+    try:
+        # Initialize GCS client
+        if credentials_path:
+            from google.oauth2 import service_account
+            credentials = service_account.Credentials.from_service_account_file(credentials_path)
+            storage_client = storage.Client(credentials=credentials, project=project_id)
+        else:
+            # Use default credentials (from environment or gcloud)
+            storage_client = storage.Client(project=project_id)
+        
+        console.print(f"[dim]Connecting to GCS bucket: {bucket_name}...[/dim]")
+        bucket = storage_client.bucket(bucket_name)
+        
+        # Convert DataFrame to Parquet in memory
+        console.print(f"[dim]Converting {len(df)} rows to Parquet format...[/dim]")
+        from io import BytesIO
+        parquet_buffer = BytesIO()
+        df.to_parquet(parquet_buffer, engine='pyarrow', index=False)
+        parquet_buffer.seek(0)
+        file_size = len(parquet_buffer.getvalue())
+        
+        # Upload to GCS
+        console.print(f"[dim]Uploading to gs://{bucket_name}/{blob_path}...[/dim]")
+        blob = bucket.blob(blob_path)
+        blob.upload_from_file(parquet_buffer, content_type='application/octet-stream')
+        
+        console.print(f"[green]✓[/green] Successfully uploaded {len(df)} rows to GCS: gs://{bucket_name}/{blob_path}")
+        console.print(f"[dim]File size: {file_size / 1024:.2f} KB[/dim]")
+        return True
+        
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error uploading to GCS: {e}")
+        return False
+
+
 def save_to_sink(df: pd.DataFrame, sink_name: str, sink_config: Dict[str, Any], **kwargs) -> bool:
     """Save DataFrame to the specified sink."""
     sink_type = sink_config.get('type', sink_name.lower())
@@ -401,6 +530,16 @@ def save_to_sink(df: pd.DataFrame, sink_name: str, sink_config: Dict[str, Any], 
     elif sink_type == 'mysql':
         table_name = kwargs.get('table_name') or sink_config.get('table_name', 'loaded_data')
         return save_to_mysql(df, sink_config, table_name)
+    
+    elif sink_type == 'googlesheets' or sink_name == 'googlesheets':
+        spreadsheet_id = sink_config.get('spreadsheet_id')
+        worksheet_name = sink_config.get('worksheet_name', 'Sheet1')
+        return save_to_googlesheets(df, sink_config, spreadsheet_id, worksheet_name)
+    
+    elif sink_type == 'gcs' or sink_type == 'gcs_parquet' or sink_name == 'gcs':
+        bucket_name = sink_config.get('bucket_name')
+        blob_path = sink_config.get('blob_path') or sink_config.get('file_path', 'data.parquet')
+        return save_to_gcs_parquet(df, sink_config, bucket_name, blob_path)
     
     else:
         console.print(f"[red]✗[/red] Unknown sink type: {sink_type}")

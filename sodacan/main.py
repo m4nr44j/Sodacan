@@ -9,7 +9,6 @@ from sodacan import config
 from sodacan import ingest as ingest_module
 from sodacan import build as build_module
 from sodacan import shell as shell_module
-from sodacan import watch as watch_module
 
 app = typer.Typer(
     name="sodacan",
@@ -60,7 +59,6 @@ config_app.command("init")(config_init)
 config_app.command("view")(config_view)
 config_app.command("set")(config_set)
 app.add_typer(config_app, name="config")
-app.add_typer(watch_module.watch_app, name="watch")
 
 
 @app.command()
