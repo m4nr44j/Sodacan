@@ -493,7 +493,7 @@ def save_to_sink(df: pd.DataFrame, sink_name: str, sink_config: Dict[str, Any], 
     
     if sink_type == 'sqlite' or sink_name == 'powerbi':
         database_file = sink_config.get('database_file', './prod_dashboard.db')
-        table_name = sink_config.get('table_name', 'data')
+        table_name = kwargs.get('table_name') or sink_config.get('table_name', 'data')
         return save_to_sqlite(df, database_file, table_name)
     
     elif sink_type == 'excel':

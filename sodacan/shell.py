@@ -40,8 +40,10 @@ def _show_help() -> None:
 [bold]Available Commands:[/bold]
 
 [bold cyan]Data Operations:[/bold cyan]
-  ingest <source> <sink>     - Ingest data from source to sink
-  i <source> <sink>          - Alias for ingest
+  ingest --source <path> --sink <name> [--table <table>]
+                              - Ingest data from source to sink
+  i --source <path> --sink <name> [--table <table>]
+                              - Alias for ingest
   build <source>             - Interactive data cleaning workbench
   b <source>                 - Alias for build
   watch --source <file> --sink <sink> --task <task>
@@ -61,7 +63,8 @@ def _show_help() -> None:
   clear                      - Clear the screen
 
 [bold]Examples:[/bold]
-  ingest sample.csv powerbi
+  ingest --source sample.csv --sink powerbi
+  ingest --source report.pdf --sink snowflake_prod --table raw_pdf_ingest
   build messy_data.csv
   config set sinks.snowflake.role SYSADMIN
   watch --source data.csv --sink powerbi --task categorize_transaction
@@ -70,13 +73,36 @@ def _show_help() -> None:
 
 def _handle_ingest(args: List[str]) -> bool:
     """Handle ingest command."""
-    if len(args) < 2:
-        console.print("[red]✗[/red] Usage: ingest <source> <sink>")
+    # Parse flags: --source, --sink, --table
+    source = None
+    sink = None
+    table = None
+    
+    i = 0
+    while i < len(args):
+        if args[i] == "--source" and i + 1 < len(args):
+            source = args[i + 1]
+            i += 2
+        elif args[i] == "--sink" and i + 1 < len(args):
+            sink = args[i + 1]
+            i += 2
+        elif args[i] == "--table" and i + 1 < len(args):
+            table = args[i + 1]
+            i += 2
+        else:
+            # Backward compatibility: allow positional args
+            if source is None:
+                source = args[i]
+            elif sink is None:
+                sink = args[i]
+            i += 1
+    
+    if not source or not sink:
+        console.print("[red]✗[/red] Usage: ingest --source <path> --sink <name> [--table <table>]")
+        console.print("[dim]Or (legacy): ingest <source> <sink>[/dim]")
         return False
     
-    source = args[0]
-    sink = args[1]
-    return ingest_module.ingest_data(source, sink)
+    return ingest_module.ingest_data(source, sink, table_name=table)
 
 
 def _handle_build(args: List[str]) -> bool:

@@ -1,5 +1,6 @@
 """Ingest command implementation"""
 
+from typing import Optional
 import pandas as pd
 from pathlib import Path
 from rich.console import Console
@@ -12,9 +13,11 @@ from sodacan.sinks import save_to_sink
 console = Console()
 
 
-def ingest_data(source: str, sink: str) -> bool:
-    """Ingest data from source and save to sink."""
+def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> bool:
+    """Ingest data from source and save to sink (non-interactive, headless)."""
     console.print(f"[bold]📥 Ingesting[/bold] {source} → {sink}")
+    if table_name:
+        console.print(f"[dim]Table override: {table_name}[/dim]")
     
     # Load config
     config = load_config()
@@ -97,7 +100,7 @@ def ingest_data(source: str, sink: str) -> bool:
     
     # Save to sink
     console.print(f"[bold]💾 Saving to {sink}...[/bold]")
-    success = save_to_sink(df, sink, sink_config)
+    success = save_to_sink(df, sink, sink_config, table_name=table_name)
     
     if success:
         console.print(f"\n[bold green]✓ Success![/bold green] Data ingested and saved to {sink}")
