@@ -1,6 +1,8 @@
 import os 
 from google import genai 
 from google.genai import types
+import google.generativeai as genai
+from google.generativeai.types import GenerationConfig
 from IPython.display import Markdown, HTML, Image, display 
 
 
@@ -35,6 +37,18 @@ CRITICAL RULES:
    output the single word: `SINK_COMMAND`
 """
 
+CODE_GENERATION_SAFETY_SETTINGS = [
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+]
+
+GENERATION_CONFIG = GenerationConfig(
+    temperature=0.1,  # Keep it low and predictable
+    top_p=1.0,
+    top_k=1
+)
 
 def start_soda_chat_session(): 
 
@@ -43,14 +57,15 @@ def start_soda_chat_session():
         raise ValueError(
             "Error: GOOGLE_API_KEY environment variable not set.\n"
             "Please set the key (e.g., 'export GOOGLE_API_KEY=your_key_here')")
+   
    genai.configure(api_key=API_KEY)
 
 
    model = genai.GenerativeModel(
    model="gemini-2.5-pro-exp-03-25",
-   config=types.GenerateContentConfig(
-      tools=[types.Tool(code_execution=types.ToolCodeExecution)]
-    ),)
+  safety_settings=CODE_GENERATION_SAFETY_SETTINGS,
+        generation_config=GENERATION_CONFIG,
+        system_instruction=prompt)
 
    chat_session = model.start_chat()
    print("Model initialized. SodaBot is ready.")
