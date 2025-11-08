@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docufy Sample App</title>
+    <link href="./styles.css" rel="stylesheet">
+    <script src="./app.js"></script>
+</head>
+<body>
+    <header>
+        <nav-bar brand="Docufy"></nav-bar>
+    </header>
+    
+    <main>
+        <user-card id="user-profile" name="John Doe"></user-card>
+        
+        <form id="contact-form" action="/api/contact" method="POST">
+            <input type="text" name="name" placeholder="Your Name" required>
+            <input type="email" name="email" placeholder="Your Email" required>
+            <textarea name="message" placeholder="Your Message" required></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+        
+        <data-table columns="name,email,status"></data-table>
+    </main>
+    
+    <footer>
+        <app-footer copyright="2024 Docufy"></app-footer>
+    </footer>
+</body>
+</html> 

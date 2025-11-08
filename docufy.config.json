@@ -1,0 +1,32 @@
+{
+  "include": [
+    "testing/**/*"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.git/**",
+    "**/target/**",
+    "**/bin/**",
+    "**/obj/**",
+    "**/vendor/**"
+  ],
+  "output": {
+    "format": "json",
+    "file": "testing-analysis.json"
+  },
+  "analysis": {
+    "crossLanguageAPICalls": true,
+    "frameworkDetection": true,
+    "databaseDetection": true,
+    "infrastructureDetection": true
+  },
+  "interactionRules": [
+    {
+      "type": "API_CALL",
+      "frontend": { "path": "./testing/frontend", "urlPrefix": "/" },
+      "backend": { "path": "./testing/backend" }
+    }
+  ]
+}
