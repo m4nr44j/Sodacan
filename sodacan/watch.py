@@ -13,6 +13,7 @@ from rich.console import Console
 
 from sodacan import ai
 from sodacan import config as config_module
+from sodacan.config import get_config_command
 from sodacan import sinks
 
 console = Console()
@@ -58,7 +59,7 @@ def watch_source(
 
     sink_config = config_module.get_sink_config(sink)
     if not sink_config:
-        console.print(f"[red]✗[/red] Sink '{sink}' not found in configuration. Run 'sodacan config view' to inspect available sinks.")
+        console.print(f"[red]✗[/red] Sink '{sink}' not found in configuration. Run '{get_config_command('view')}' to inspect available sinks.")
         return
 
     task_config = config_module.get_task_config(task)

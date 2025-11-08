@@ -11,6 +11,22 @@ console = Console()
 
 CONFIG_FILENAME = "sodacan.yaml"
 
+# Track if we're running in shell mode (for command recommendations)
+_in_shell_mode = False
+
+
+def set_shell_mode(enabled: bool = True) -> None:
+    """Set whether we're running in shell mode (affects command recommendations)."""
+    global _in_shell_mode
+    _in_shell_mode = enabled
+
+
+def get_config_command(operation: str) -> str:
+    """Get the appropriate config command based on shell mode."""
+    if _in_shell_mode:
+        return f"config {operation}"
+    return f"sodacan config {operation}"
+
 
 def get_config_path() -> Path:
     """Get the path to the config file in the current directory."""
@@ -96,7 +112,7 @@ def init_config() -> bool:
     config_path = get_config_path()
     
     if config_path.exists():
-        console.print(f"[yellow]⚠[/yellow] {CONFIG_FILENAME} already exists. Use 'sodacan config view' to see it.")
+        console.print(f"[yellow]⚠[/yellow] {CONFIG_FILENAME} already exists. Use '{get_config_command('view')}' to see it.")
         return False
     
     config = get_default_config()
@@ -112,7 +128,7 @@ def load_config() -> Dict[str, Any]:
     config_path = get_config_path()
     
     if not config_path.exists():
-        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run 'sodacan config init' first.")
+        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run '{get_config_command('init')}' first.")
         return {}
     
     with open(config_path, 'r') as f:
@@ -131,7 +147,7 @@ def view_config() -> None:
     config_path = get_config_path()
     
     if not config_path.exists():
-        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run 'sodacan config init' first.")
+        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run '{get_config_command('init')}' first.")
         return
     
     with open(config_path, 'r') as f:
