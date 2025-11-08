@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+from rich.align import Align
 
 try:
     from model import start_soda_chat_session
@@ -30,14 +31,13 @@ app = typer.Typer(
 console = Console()
 
 INTRO_LOGO = r"""
-███████╗ ██████╗ ██████╗  █████╗  ██████╗ █████╗ ███╗   ██╗                     ╗
-██╔════╝██╔═══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗████╗  ██║      ╔═██ ██ ██ ██  █
-███████╗██║   ██║██║  ██║███████║██║     ███████║██╔██╗ ██║      █ ╔══════════╗ █
-╚════██║██║   ██║██║  ██║██╔══██║██║     ██╔══██║██║╚██╗██║      █ ║          ║ █
-███████║╚██████╔╝██████╔╝██║  ██║╚██████╗██║  ██║██║ ╚████║      █ ██ ██ ██ ██   
-╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝       ╚════════════  █    
-                                                                                    █     
-                                                                                                                                                                                                                              
+                                                                          ║
+███████╗ ██████╗ ██████╗  █████╗  ██████╗ █████╗ ███╗   ██╗        ██████╗║
+██╔════╝██╔═══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗████╗  ██║          █╔═══█║
+███████╗██║   ██║██║  ██║███████║██║     ███████║██╔██╗ ██║          █║   █║
+╚════██║██║   ██║██║  ██║██╔══██║██║     ██╔══██║██║╚██╗██║          █║ █ █║
+███████║╚██████╔╝██████╔╝██║  ██║╚██████╗██║  ██║██║ ╚████║          █╚═══█║   
+╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝           ╚███╔╝                                                                                                                                            
 """
 
 
@@ -45,7 +45,7 @@ def _render_intro() -> None:
     """Display a splash screen with top commands and aliases."""
     console.print(
         Panel(
-            Text(INTRO_LOGO.rstrip(), justify="center", style="bold cyan"),
+            Align.center(Text(INTRO_LOGO.rstrip() + "\n", style="bold cyan")),
             border_style="cyan",
         )
     )
@@ -105,6 +105,12 @@ config_app.command("set")(config_set)
 app.add_typer(config_app, name="config")
 app.add_typer(watch_module.watch_app, name="watch")
 
+cfg_app = typer.Typer(hidden=True)
+cfg_app.command("init")(config_init)
+cfg_app.command("view")(config_view)
+cfg_app.command("set")(config_set)
+app.add_typer(cfg_app, name="cfg")
+
 
 @app.command()
 def ingest(
@@ -149,7 +155,6 @@ def main(ctx: typer.Context):
     if ctx.invoked_subcommand is None:
         _render_intro()
 
-
 @app.command()
 def shell() -> None:
     """Open the sodacan interactive shell."""
@@ -180,11 +185,13 @@ def cli():
 
 if __name__ == "__main__":
     cli()
-    chat = start_soda_chat_session()
-    while True: 
-        user_input = input("(soda) > ")
-        if user_input.lower() in ['exit', 'quit']:
-            break
+
+    if start_soda_chat_session is not None:
+        chat = start_soda_chat_session()
+        while True:
+            user_input = input("(soda) > ")
+            if user_input.lower() in ["exit", "quit"]:
+                break
 
             schema_string = get_schema_string(df)  # noqa: F821 - placeholder for future integration
             prompt = f"""
