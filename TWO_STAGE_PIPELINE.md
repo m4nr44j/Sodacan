@@ -56,7 +56,7 @@ User Input (Natural Language)
 - `sink_export`: Save/export command
 - `error`: Ambiguous or invalid request
 
-**Model**: `gemini-1.5-flash` (fast, efficient for classification)
+**Model**: `gemini-2.5-flash` (fast, efficient for classification)
 
 ## Stage 2: Executor (`executor.py`)
 

@@ -33,7 +33,7 @@ def configure_gemini() -> bool:
     return True
 
 
-def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-1.5-pro") -> Optional[str]:
+def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-2.5-flash") -> Optional[str]:
     """Extract structured data from a PDF using AI."""
     if pdfplumber is None:
         console.print("[red]✗[/red] pdfplumber not installed. Run 'pip install pdfplumber'.")
@@ -86,7 +86,7 @@ def translate_natural_language_to_pandas(natural_language: str, df_preview: str,
         return None
     
     default_prompt = config.get("ai", {}).get("default_prompt", "You are an expert data engineer.")
-    model_name = config.get("ai", {}).get("model", "gemini-1.5-pro")
+    model_name = config.get("ai", {}).get("model", "gemini-2.5-flash")
     
     full_prompt = f"""{default_prompt}
 
@@ -161,7 +161,7 @@ def run_task_prompt(task_config: Dict[str, Any], payload: Dict[str, Any], config
     if not configure_gemini():
         return None
 
-    model_name = task_config.get("model") or config.get("ai", {}).get("model", "gemini-1.5-pro")
+    model_name = task_config.get("model") or config.get("ai", {}).get("model", "gemini-2.5-flash")
 
     try:
         model = genai.GenerativeModel(model_name)

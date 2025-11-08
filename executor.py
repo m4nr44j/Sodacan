@@ -83,7 +83,7 @@ def start_executor_session():
     genai.configure(api_key=API_KEY)
 
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-pro",
+        model_name="gemini-2.5-flash",
         safety_settings=CODE_GENERATION_SAFETY_SETTINGS,
         generation_config=GENERATION_CONFIG,
         system_instruction=EXECUTOR_SYSTEM_PROMPT
