@@ -38,7 +38,7 @@ def ingest_data(source: str, sink: str) -> bool:
     # Handle different file types
     if source_path.suffix.lower() == '.pdf':
         console.print("[dim]Extracting data from PDF using AI...[/dim]")
-        model_name = config.get("ai", {}).get("model", "gemini-1.5-flash")
+        model_name = config.get("ai", {}).get("model", "gemini-1.5-pro")
         csv_data = extract_pdf_to_dataframe(str(source_path), model_name)
         if not csv_data:
             return False

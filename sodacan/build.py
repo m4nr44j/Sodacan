@@ -1,6 +1,7 @@
 """Build command implementation with interactive REPL"""
 
 import pandas as pd
+import sys
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
@@ -9,6 +10,11 @@ from rich.panel import Panel
 from sodacan.config import load_config, get_sink_config
 from sodacan.ai import translate_natural_language_to_pandas
 from sodacan.sinks import save_to_sink
+
+# Add parent directory to path to import model and executor
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from model import start_analyzer_session, analyze_user_input
+from executor import start_executor_session, execute_instructions
 
 console = Console()
 
@@ -22,6 +28,14 @@ def format_dataframe_preview(df: pd.DataFrame, max_rows: int = 5, max_cols: int 
         preview_df = preview_df.iloc[:, :max_cols]
     
     return str(preview_df)
+
+
+def get_dataframe_schema(df: pd.DataFrame) -> str:
+    """Get DataFrame schema information as a string."""
+    schema_parts = []
+    for col, dtype in df.dtypes.items():
+        schema_parts.append(f"'{col}': {str(dtype)}")
+    return "{" + ", ".join(schema_parts) + "}"
 
 
 def show_dataframe_preview(df: pd.DataFrame):
@@ -97,6 +111,18 @@ def build_interactive(source: str) -> bool:
     
     console.print(f"[green]✓[/green] Loaded {len(df)} rows\n")
     
+    # Initialize two-stage AI pipeline
+    console.print("[dim]Initializing AI pipeline (Analyzer + Executor)...[/dim]")
+    try:
+        analyzer_session = start_analyzer_session()
+        executor_session = start_executor_session()
+        console.print("[green]✓[/green] AI pipeline ready (two-stage: Analyzer → Executor)\n")
+        use_two_stage = True
+    except Exception as e:
+        console.print(f"[yellow]⚠[/yellow] Could not initialize two-stage pipeline: {e}")
+        console.print("[dim]Falling back to single-stage translation...[/dim]\n")
+        use_two_stage = False
+    
     # Show initial preview
     show_dataframe_preview(df)
     
@@ -145,11 +171,37 @@ def build_interactive(source: str) -> bool:
                 
                 break
             
-            # Natural language command - translate to pandas
+            # Natural language command - two-stage pipeline
             console.print(f"[dim]🤖 Processing: {command}[/dim]")
             
             df_preview = format_dataframe_preview(df)
-            pandas_code = translate_natural_language_to_pandas(command, df_preview, config)
+            df_schema = get_dataframe_schema(df)
+            
+            if use_two_stage:
+                # Stage 1: Analyzer - Natural language → JSON instructions
+                console.print("[dim]Stage 1 (Analyzer): Converting to JSON instructions...[/dim]")
+                try:
+                    instructions = analyze_user_input(analyzer_session, command, df_schema)
+                    console.print(f"[dim]Intent: {instructions.get('intent')}[/dim]")
+                    
+                    # Stage 2: Executor - JSON instructions → pandas code
+                    console.print("[dim]Stage 2 (Executor): Generating code from instructions...[/dim]")
+                    pandas_code = execute_instructions(executor_session, instructions, df_preview)
+                    
+                    if pandas_code == "SINK_COMMAND":
+                        console.print("[yellow]💡 Detected save command. Use 'save to <sink>' explicitly.[/yellow]")
+                        continue
+                    elif pandas_code == "ERROR":
+                        console.print("[red]✗[/red] Could not understand command. Try rephrasing.")
+                        continue
+                    
+                except Exception as e:
+                    console.print(f"[yellow]⚠[/yellow] Two-stage pipeline error: {e}")
+                    console.print("[dim]Falling back to single-stage...[/dim]")
+                    pandas_code = translate_natural_language_to_pandas(command, df_preview, config)
+            else:
+                # Fallback to single-stage
+                pandas_code = translate_natural_language_to_pandas(command, df_preview, config)
             
             if not pandas_code:
                 console.print("[red]✗[/red] Could not translate command. Try rephrasing.")

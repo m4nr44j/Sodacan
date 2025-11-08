@@ -18,6 +18,7 @@ from sodacan import build as build_module
 from sodacan import config
 from sodacan import ingest as ingest_module
 from sodacan import shell as shell_module
+from sodacan import watch as watch_module
 
 app = typer.Typer(
     name="sodacan",

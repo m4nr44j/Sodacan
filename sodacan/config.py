@@ -20,10 +20,6 @@ def get_config_path() -> Path:
 def get_default_config() -> Dict[str, Any]:
     """Return the default configuration."""
     return {
-        "ai": {
-            "model": "gemini-1.5-pro",
-            "default_prompt": "You are an expert data engineer. Transform user requests into clean, efficient pandas operations."
-        },
         "source_defaults": {
             "csv_encoding": "utf-8"
         },
