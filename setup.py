@@ -1,4 +1,4 @@
-"""Setup script for data-cli"""
+"""Setup script for sodacan"""
 
 from setuptools import setup, find_packages
 
@@ -9,7 +9,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="data-cli",
+    name="sodacan",
     version="0.1.0",
     author="HackPrinceton Team",
     description="The AI Data Workbench - Turn messy enterprise data into BI-ready insights",
@@ -31,7 +31,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "data-cli=data_cli.main:cli",
+            "sodacan=sodacan.main:cli",
         ],
     },
 )

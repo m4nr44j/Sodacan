@@ -1,15 +1,29 @@
-"""AI integration for data-cli"""
+"""AI integration for sodacan."""
 
 import os
 from typing import Optional
-import google.generativeai as genai
+
 from rich.console import Console
+
+try:
+    import google.generativeai as genai
+except ImportError:  # pragma: no cover - optional dependency
+    genai = None  # type: ignore[assignment]
+
+try:
+    import pdfplumber
+except ImportError:  # pragma: no cover - optional dependency
+    pdfplumber = None  # type: ignore[assignment]
 
 console = Console()
 
 
 def configure_gemini() -> bool:
     """Configure Gemini API, checking for API key."""
+    if genai is None:
+        console.print("[red]✗[/red] google-generativeai not installed. Run 'pip install google-generativeai'.")
+        return False
+
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         console.print("[red]✗[/red] GEMINI_API_KEY not found in environment. Set it with: export GEMINI_API_KEY=your_key")
@@ -19,10 +33,12 @@ def configure_gemini() -> bool:
     return True
 
 
-def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-1.5-pro") -> str:
+def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-1.5-pro") -> Optional[str]:
     """Extract structured data from a PDF using AI."""
-    import pdfplumber
-    
+    if pdfplumber is None:
+        console.print("[red]✗[/red] pdfplumber not installed. Run 'pip install pdfplumber'.")
+        return None
+
     if not configure_gemini():
         return None
     
@@ -59,7 +75,7 @@ Text content:
             csv_data = csv_data.split("\n", 1)[1].rsplit("\n", 1)[0]
         
         return csv_data
-    except Exception as e:
+    except Exception as e:  # pragma: no cover - runtime safety
         console.print(f"[red]✗[/red] Error calling Gemini: {e}")
         return None
 

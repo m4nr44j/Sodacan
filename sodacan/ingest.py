@@ -5,9 +5,9 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-from data_cli.config import load_config, get_sink_config
-from data_cli.ai import extract_pdf_to_dataframe
-from data_cli.sinks import save_to_sink
+from sodacan.config import load_config, get_sink_config
+from sodacan.ai import extract_pdf_to_dataframe
+from sodacan.sinks import save_to_sink
 
 console = Console()
 
@@ -24,7 +24,7 @@ def ingest_data(source: str, sink: str) -> bool:
     # Get sink config
     sink_config = get_sink_config(sink)
     if not sink_config:
-        console.print(f"[red]✗[/red] Sink '{sink}' not found in config. Run 'data-cli config view' to see available sinks.")
+        console.print(f"[red]✗[/red] Sink '{sink}' not found in config. Run 'sodacan config view' to see available sinks.")
         return False
     
     # Determine source type and load

@@ -6,9 +6,9 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
-from data_cli.config import load_config, get_sink_config
-from data_cli.ai import translate_natural_language_to_pandas
-from data_cli.sinks import save_to_sink
+from sodacan.config import load_config, get_sink_config
+from sodacan.ai import translate_natural_language_to_pandas
+from sodacan.sinks import save_to_sink
 
 console = Console()
 
@@ -105,7 +105,7 @@ def build_interactive(source: str) -> bool:
     
     while True:
         try:
-            command = input("\n(Data-CLI) > ").strip()
+            command = input("\n(sodacan) > ").strip()
             
             if not command:
                 continue

@@ -1,4 +1,4 @@
-"""Configuration management for data-cli"""
+"""Configuration management for sodacan"""
 
 import os
 import yaml
@@ -9,7 +9,7 @@ from rich.syntax import Syntax
 
 console = Console()
 
-CONFIG_FILENAME = "data-cli.yaml"
+CONFIG_FILENAME = "sodacan.yaml"
 
 
 def get_config_path() -> Path:
@@ -46,11 +46,11 @@ def get_default_config() -> Dict[str, Any]:
 
 
 def init_config() -> bool:
-    """Initialize a new data-cli.yaml file."""
+    """Initialize a new sodacan.yaml file."""
     config_path = get_config_path()
     
     if config_path.exists():
-        console.print(f"[yellow]⚠[/yellow] {CONFIG_FILENAME} already exists. Use 'data-cli config view' to see it.")
+        console.print(f"[yellow]⚠[/yellow] {CONFIG_FILENAME} already exists. Use 'sodacan config view' to see it.")
         return False
     
     config = get_default_config()
@@ -62,11 +62,11 @@ def init_config() -> bool:
 
 
 def load_config() -> Dict[str, Any]:
-    """Load the configuration from data-cli.yaml."""
+    """Load the configuration from sodacan.yaml."""
     config_path = get_config_path()
     
     if not config_path.exists():
-        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run 'data-cli config init' first.")
+        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run 'sodacan config init' first.")
         return {}
     
     with open(config_path, 'r') as f:
@@ -74,7 +74,7 @@ def load_config() -> Dict[str, Any]:
 
 
 def save_config(config: Dict[str, Any]) -> None:
-    """Save the configuration to data-cli.yaml."""
+    """Save the configuration to sodacan.yaml."""
     config_path = get_config_path()
     with open(config_path, 'w') as f:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
@@ -85,7 +85,7 @@ def view_config() -> None:
     config_path = get_config_path()
     
     if not config_path.exists():
-        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run 'data-cli config init' first.")
+        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run 'sodacan config init' first.")
         return
     
     with open(config_path, 'r') as f:

@@ -1,4 +1,4 @@
-# data-cli: The AI Data Workbench
+# sodacan: The AI Data Workbench
 
 > Turn messy enterprise data into BI-ready insights in minutes, not weeks.
 
@@ -18,57 +18,57 @@ Get your API key from: https://makersuite.google.com/app/apikey
 ### Initialize Configuration
 
 ```bash
-data-cli config init
+sodacan config init
 ```
 
-This creates a `data-cli.yaml` file in your current directory with default settings.
+This creates a `sodacan.yaml` file in your current directory with default settings.
 
 ### Basic Usage
 
 **Quick ingest (10-second magic):**
 ```bash
-data-cli ingest report.pdf powerbi
+sodacan ingest report.pdf powerbi
 ```
 
 **Interactive cleaning (10-minute surgical clean):**
 ```bash
-data-cli build --interactive messy_dump.csv
+sodacan build --interactive messy_dump.csv
 ```
 
 ## 📋 Commands
 
 ### Configuration Management
 
-- `data-cli config init` - Create a new config file
-- `data-cli config view` - View current configuration
-- `data-cli config set <key> <value>` - Set a config value (e.g., `data-cli config set sinks.snowflake.role SYSADMIN`)
+- `sodacan config init` - Create a new config file
+- `sodacan config view` - View current configuration
+- `sodacan config set <key> <value>` - Set a config value (e.g., `sodacan config set sinks.snowflake.role SYSADMIN`)
 
 ### Data Operations
 
-- `data-cli ingest <source> <sink>` - Quick ingest from source to sink
-- `data-cli build --interactive <source>` - Interactive REPL for data cleaning
+- `sodacan ingest <source> <sink>` - Quick ingest from source to sink
+- `sodacan build --interactive <source>` - Interactive REPL for data cleaning
 
 ## 🎯 Demo Flow
 
 ### Demo 1: The "No-Code" Magic
 ```bash
 # Show old Power BI dashboard
-data-cli ingest report.pdf powerbi
+sodacan ingest report.pdf powerbi
 # Refresh Power BI → Charts update!
 ```
 
 ### Demo 2: The "Pro-Code" Workbench
 ```bash
-data-cli build --interactive messy.csv
-# (Data-CLI) > drop null rows and convert 'sale_amount' to a number
-# (Data-CLI) > save to snowflake
+sodacan build --interactive messy.csv
+# (Sodacan) > drop null rows and convert 'sale_amount' to a number
+# (Sodacan) > save to snowflake
 # → Generates load_to_snowflake.sql
 ```
 
 ### Demo 3: The "Enterprise" Feature
 ```bash
-data-cli config view
-data-cli config set sinks.powerbi.table_name 'new_demo_table'
+sodacan config view
+sodacan config set sinks.powerbi.table_name 'new_demo_table'
 ```
 
 ## 🏗️ Architecture

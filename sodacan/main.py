@@ -1,34 +1,32 @@
-"""Main CLI entry point for data-cli"""
+"""Main CLI entry point for sodacan"""
 
 import typer
 from rich.console import Console
 
-from data_cli import config
-from data_cli import ingest as ingest_module
-from data_cli import build as build_module
+from sodacan import config
+from sodacan import ingest as ingest_module
+from sodacan import build as build_module
+from sodacan import shell as shell_module
 
 app = typer.Typer(
-    name="data-cli",
+    name="sodacan",
     help="The AI Data Workbench - Turn messy enterprise data into BI-ready insights in minutes",
-    add_completion=False
+    add_completion=False,
 )
 
 console = Console()
 
 
-@app.command()
 def config_init():
-    """Initialize a new data-cli.yaml configuration file."""
+    """Initialize a new sodacan.yaml configuration file."""
     config.init_config()
 
 
-@app.command()
 def config_view():
-    """View the current data-cli.yaml configuration."""
+    """View the current sodacan.yaml configuration."""
     config.view_config()
 
 
-@app.command()
 def config_set(
     key: str = typer.Argument(..., help="Configuration key (e.g., 'sinks.snowflake.role')"),
     value: str = typer.Argument(..., help="Value to set")
@@ -38,7 +36,7 @@ def config_set(
 
 
 # Create config subcommand group
-config_app = typer.Typer(help="Manage data-cli configuration")
+config_app = typer.Typer(help="Manage sodacan configuration")
 config_app.command("init")(config_init)
 config_app.command("view")(config_view)
 config_app.command("set")(config_set)
@@ -68,8 +66,14 @@ def build(
 
 @app.callback()
 def main():
-    """data-cli: The AI Data Workbench"""
+    """sodacan: The AI Data Workbench"""
     pass
+
+
+@app.command()
+def shell() -> None:
+    """Open the sodacan interactive shell."""
+    shell_module.launch_shell()
 
 
 def cli():

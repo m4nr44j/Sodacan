@@ -31,15 +31,15 @@ echo "GEMINI_API_KEY=your_api_key_here" > .env
 ### 3. Initialize Configuration
 
 ```bash
-data-cli config init
+sodacan config init
 ```
 
-This creates a `data-cli.yaml` file in your current directory.
+This creates a `sodacan.yaml` file in your current directory.
 
 ### 4. Test the CLI
 
 ```bash
-data-cli --help
+sodacan --help
 ```
 
 ## Development Mode
@@ -47,19 +47,19 @@ data-cli --help
 If you want to run without installing:
 
 ```bash
-python -m data_cli.main --help
+python -m sodacan.main --help
 ```
 
 Or add to your PATH:
 
 ```bash
 export PATH=$PATH:$(pwd)
-chmod +x data_cli/main.py
+chmod +x sodacan/main.py
 ```
 
 ## Troubleshooting
 
-### "command not found: data-cli"
+### "command not found: sodacan"
 
 Make sure you've installed the package:
 ```bash
@@ -68,7 +68,7 @@ pip install -e .
 
 Or run directly:
 ```bash
-python -m data_cli.main
+python -m sodacan.main
 ```
 
 ### "GEMINI_API_KEY not found"
