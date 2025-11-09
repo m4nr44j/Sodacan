@@ -20,16 +20,34 @@ sources:
     warehouse: SODA_WH
     database: HACKATHON_DB
     schema: PUBLIC
-    query: "SELECT\n    'Fictional Tech Inc.' AS Company,\n    COALESCE(t.Product_Category, 'Other') AS Business_Segment,\n    CASE \n        WHEN MONTH(t.Sale_Timestamp) IN (4,5,6) THEN 'Q2-2025'\n        WHEN MONTH(t.Sale_Timestamp) IN (7,8,9) THEN 'Q3-2025'\n        ELSE 'Other'\n    END AS Quarter,\n    SUM(t.Sale_Amount) / 1000000 AS Revenue_Millions,\n    'N/A' AS Commentary\nFROM INTERNAL_TRANSACTIONS t\nWHERE MONTH(t.Sale_Timestamp) IN (4,5,6,7,8,9)\nGROUP BY 1, 2, 3\nORDER BY 3, 2;"
+    query: |
+      SELECT
+        'Fictional Tech Inc.' AS Company,
+        CASE 
+          WHEN t.Product_SKU LIKE 'SaaS%' THEN 'SaaS'
+          WHEN t.Product_SKU LIKE 'Cloud%' THEN 'Cloud Services'
+          ELSE 'Other'
+        END AS Business_Segment,
+        CASE 
+          WHEN MONTH(t.Sale_Timestamp) IN (4,5,6) THEN 'Q2-2025'
+          WHEN MONTH(t.Sale_Timestamp) IN (7,8,9) THEN 'Q3-2025'
+          ELSE 'Other'
+        END AS Quarter,
+        SUM(t.Sale_Amount) / 1000000 AS Revenue_Millions,
+        'N/A' AS Commentary
+      FROM INTERNAL_TRANSACTIONS t
+      WHERE MONTH(t.Sale_Timestamp) IN (4,5,6,7,8,9)
+      GROUP BY 1, 2, 3
+      ORDER BY 3, 2;
 sinks:
   google_sheet_live:
     type: googlesheets
-    spreadsheet_id: YOUR_SODA_LIVE_FEED_SHEET_ID_HERE
+    spreadsheet_id: "1R5HOJNnHx-5Lih1T2GCYEpn-La6e3CIK2i21qOGtYiA"
     worksheet_name: Sheet1
     credentials_path: /home/manraaj06s/.sodacan-creds/gcp-service-key.json
   google_sheet_bi:
     type: googlesheets
-    spreadsheet_id: YOUR_TABLEAU_FEED_SHEET_ID_HERE
+    spreadsheet_id: "1p7k5j7OSQJfSdaVx5ag4rVmowwcllfkT4s8-FiHFyTI"
     worksheet_name: Sheet1
     credentials_path: /home/manraaj06s/.sodacan-creds/gcp-service-key.json
   gcs_datalake:
