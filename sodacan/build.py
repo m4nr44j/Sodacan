@@ -1,6 +1,6 @@
 """Build command implementation with interactive REPL"""
 
-from typing import Optional
+from typing import Optional, List
 import pandas as pd
 import sys
 from pathlib import Path
@@ -181,6 +181,10 @@ def build_interactive(source: str) -> bool:
     # Show initial preview
     show_dataframe_preview(df)
     
+    # Initialize DataFrame history for undo/redo
+    df_history: List[pd.DataFrame] = [df.copy()]  # Store initial state
+    history_index = 0  # Current position in history
+    
     # REPL loop
     console.print("\n[bold yellow]Enter commands (type 'help' for help, 'save to <sink>' to finish):[/bold yellow]")
     
@@ -203,12 +207,48 @@ def build_interactive(source: str) -> bool:
 • save to <sink>: Save to configured sink (e.g., 'save to snowflake_prod "QBR_FINAL"')
 • save to <sink1> and <sink2>: Save to multiple sinks
 • preview: Show current data preview
+• undo: Revert to previous DataFrame state
+• redo: Re-apply transformation after undo
+• history: Show transformation history
 • exit/quit: Exit without saving
                 """, title="Help"))
                 continue
             
             if command.lower() == 'preview':
                 show_dataframe_preview(df)
+                continue
+            
+            # Handle undo command
+            if command.lower() == 'undo':
+                if history_index > 0:
+                    history_index -= 1
+                    df = df_history[history_index].copy()
+                    console.print(f"[green]✓[/green] Undone. Reverted to state {history_index + 1}/{len(df_history)}")
+                    show_dataframe_preview(df)
+                else:
+                    console.print("[yellow]⚠[/yellow] Nothing to undo. Already at initial state.")
+                continue
+            
+            # Handle redo command
+            if command.lower() == 'redo':
+                if history_index < len(df_history) - 1:
+                    history_index += 1
+                    df = df_history[history_index].copy()
+                    console.print(f"[green]✓[/green] Redone. Restored to state {history_index + 1}/{len(df_history)}")
+                    show_dataframe_preview(df)
+                else:
+                    console.print("[yellow]⚠[/yellow] Nothing to redo. Already at latest state.")
+                continue
+            
+            # Handle history command
+            if command.lower() == 'history':
+                console.print(f"\n[bold]Transformation History:[/bold]")
+                console.print(f"Total states: {len(df_history)}")
+                console.print(f"Current state: {history_index + 1}/{len(df_history)}")
+                for i, state_df in enumerate(df_history):
+                    marker = "←" if i == history_index else " "
+                    console.print(f"  {marker} State {i + 1}: {state_df.shape[0]} rows × {state_df.shape[1]} columns")
+                console.print()
                 continue
             
             # Check for merge_10Q command
@@ -238,7 +278,12 @@ def build_interactive(source: str) -> bool:
                     console.print(f"[dim]Merging 10-Q PDF: {s3_path}[/dim]")
                     merged_df = merge_10q_pdf(s3_path, company, quarter, df, config)
                     if merged_df is not None:
+                        # Store in history before merge
+                        if history_index < len(df_history) - 1:
+                            df_history = df_history[:history_index + 1]
                         df = merged_df
+                        df_history.append(df.copy())
+                        history_index = len(df_history) - 1
                         console.print("[green]✓[/green] Merge complete")
                         show_dataframe_preview(df)
                     else:
@@ -343,13 +388,26 @@ def build_interactive(source: str) -> bool:
             
             # Execute pandas code
             try:
+                # Store current state in history before transformation
+                # If we're not at the end of history, truncate future states
+                if history_index < len(df_history) - 1:
+                    df_history = df_history[:history_index + 1]
+                
                 # Create a safe execution environment
                 exec_globals = {'df': df.copy(), 'pd': pd}
                 exec(pandas_code, exec_globals)
-                df = exec_globals['df']
+                new_df = exec_globals['df']
                 
-                console.print("[green]✓[/green] Command executed successfully")
-                show_dataframe_preview(df)
+                # Only add to history if DataFrame actually changed
+                if not new_df.equals(df):
+                    df = new_df
+                    df_history.append(df.copy())
+                    history_index = len(df_history) - 1
+                    console.print("[green]✓[/green] Command executed successfully")
+                    show_dataframe_preview(df)
+                else:
+                    console.print("[yellow]⚠[/yellow] Command executed but DataFrame unchanged")
+                    show_dataframe_preview(df)
                 
             except Exception as e:
                 console.print(f"[red]✗[/red] Error executing code: {e}")
