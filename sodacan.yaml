@@ -50,10 +50,6 @@ sinks:
   excel:
     type: excel
     output_dir: ./client_exports/
-  powerbi:
-    type: sqlite
-    database_file: ./live_transactions.db
-    table_name: transactions
 tasks:
   pass_through:
     pass_through: true  # Skip AI processing, just copy rows as-is

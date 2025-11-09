@@ -128,28 +128,48 @@ def watch_source(
             last_offset = source.stat().st_size
 
             if new_lines:
-                records = _lines_to_records(header, new_lines)
-                console.print(f"[green][OK][/green] Detected {len(records)} new row(s)")
+                console.print(f"[green][OK][/green] Detected {len(_lines_to_records(header, new_lines))} new row(s)")
 
-                for record in records:
-                    if is_pass_through:
-                        # Pass-through: no AI call, just use the record as-is
-                        enriched = record
-                    else:
-                        # Regular task: call AI to enrich the record
-                        task_output = ai.run_task_prompt(task_config, record, config)
-                        if task_output is None:
-                            console.print("[red][ERROR][/red] Skipping row due to AI error.")
-                            continue
-                        enriched = {**record, output_field: task_output}
-                    
-                    df = pd.DataFrame([enriched])
-                    # Use append or replace mode based on parameter
-                    mode = 'append' if append else 'replace'
-                    success = sinks.save_to_sink(df, sink, sink_config, mode=mode)
-                    if success:
-                        action = "Appended" if append else "Saved"
-                        console.print(f"[dim]{action} row to {sink}[/dim]")
+                if append:
+                    # Append mode: process only new rows
+                    records = _lines_to_records(header, new_lines)
+                    for record in records:
+                        if is_pass_through:
+                            enriched = record
+                        else:
+                            task_output = ai.run_task_prompt(task_config, record, config)
+                            if task_output is None:
+                                console.print("[red][ERROR][/red] Skipping row due to AI error.")
+                                continue
+                            enriched = {**record, output_field: task_output}
+                        
+                        df = pd.DataFrame([enriched])
+                        success = sinks.save_to_sink(df, sink, sink_config, mode='append')
+                        if success:
+                            console.print(f"[dim]Appended row to {sink}[/dim]")
+                else:
+                    # Replace mode: re-read entire file and replace everything
+                    console.print(f"[dim]Re-reading entire file for replace...[/dim]")
+                    with source.open("r", encoding="utf-8", newline="") as handle:
+                        lines = handle.readlines()[1:]  # Skip header
+                        all_lines = [line for line in lines if line.strip()]
+                        if all_lines:
+                            records = _lines_to_records(header, all_lines)
+                            all_enriched = []
+                            for record in records:
+                                if is_pass_through:
+                                    enriched = record
+                                else:
+                                    task_output = ai.run_task_prompt(task_config, record, config)
+                                    if task_output is None:
+                                        continue
+                                    enriched = {**record, output_field: task_output}
+                                all_enriched.append(enriched)
+                            if all_enriched:
+                                df = pd.DataFrame(all_enriched)
+                                success = sinks.save_to_sink(df, sink, sink_config, mode='replace')
+                                if success:
+                                    console.print(f"[green][OK][/green] Updated {sink} with {len(df)} total rows")
 
             if once:
                 console.print("[bold green][OK][/bold green] Completed single pass.")
