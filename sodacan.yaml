@@ -7,7 +7,11 @@
 # AI Configuration
 ai:
   # This is the model that powers the 'soda build' translator and 'soda watch' enricher
+<<<<<<< Updated upstream
   model: "gemini-2.5-flash"
+=======
+  model: "gemini-2.5-pro"
+>>>>>>> Stashed changes
 
 # Default settings
 source_defaults:
@@ -23,11 +27,8 @@ sources:
     host: "35.196.136.21"
     port: 3306
     database: "soda_hackathon_db"
-    user: "manraaj"
-    password: "Dartmouth1234("
-    
-    # This query will be run by `soda` to get the starting data
-    # It pulls the messy, PII-filled data
+    user: "soda_user"  # <-- CHANGE THIS LINE
+    password: "Dartmouth1234(" 
     query: "SELECT * FROM RAW_TRANSACTIONS;"
 
   # Source for Flow 3: The "complex" internal analytics query
