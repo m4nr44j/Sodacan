@@ -7,8 +7,19 @@ from typing import Dict, Any, Optional
 from jinja2 import Template
 from rich.console import Console
 import os
+import re
 
 console = Console()
+
+def expand_env_vars(value: str) -> str:
+    """Expand environment variables in the format ${VAR_NAME}."""
+    pattern = re.compile(r'\$\{([^}]+)\}')
+    
+    def replacer(match):
+        env_var = match.group(1)
+        return os.environ.get(env_var, match.group(0))
+    
+    return pattern.sub(replacer, value)
 
 # Try importing database connectors (optional dependencies)
 try:
@@ -128,9 +139,9 @@ def save_to_snowflake_direct(df: pd.DataFrame, sink_config: Dict[str, Any], tabl
         return False
     
     # Get connection parameters
-    account = sink_config.get('account')
-    user = sink_config.get('user')
-    password = sink_config.get('password')
+    account = expand_env_vars(str(sink_config.get('account', '')))
+    user = expand_env_vars(str(sink_config.get('user', '')))
+    password = expand_env_vars(str(sink_config.get('password', '')))
     warehouse = sink_config.get('warehouse', 'COMPUTE_WH')
     database = sink_config.get('database', 'HACKATHON_DB')
     schema = sink_config.get('schema', 'PUBLIC')
