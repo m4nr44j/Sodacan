@@ -16,7 +16,7 @@ sources:
     account: ${SNOWFLAKE_ACCOUNT}
     user: ${SNOWFLAKE_USER}
     password: ${SNOWFLAKE_PASSWORD}
-    role: SYSADMIN
+    role: ACCOUNTADMIN
     warehouse: SODA_WH
     database: HACKATHON_DB
     schema: PUBLIC
@@ -43,7 +43,7 @@ sinks:
     account: ${SNOWFLAKE_ACCOUNT}
     user: ${SNOWFLAKE_USER}
     password: ${SNOWFLAKE_PASSWORD}
-    role: SYSADMIN
+    role: ACCOUNTADMIN
     warehouse: SODA_WH
     database: HACKATHON_DB
     schema: PUBLIC
