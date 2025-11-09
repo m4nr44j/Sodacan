@@ -48,3 +48,4 @@ load_to_*.sql
 *.pdf
 *.json
 
+.env.txt
