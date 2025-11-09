@@ -51,6 +51,7 @@ def watch_source(
     task: str,
     poll_interval: float = 1.0,
     once: bool = False,
+    append: bool = True,
 ) -> None:
     """Monitor the source for new rows, enrich them, and save to the sink."""
     config = config_module.load_config()
@@ -119,10 +120,12 @@ def watch_source(
                         enriched = {**record, output_field: task_output}
                     
                     df = pd.DataFrame([enriched])
-                    # Use append mode for watch command to add rows incrementally
-                    success = sinks.save_to_sink(df, sink, sink_config, mode='append')
+                    # Use append or replace mode based on parameter
+                    mode = 'append' if append else 'replace'
+                    success = sinks.save_to_sink(df, sink, sink_config, mode=mode)
                     if success:
-                        console.print(f"[dim]Appended row to {sink}[/dim]")
+                        action = "Appended" if append else "Saved"
+                        console.print(f"[dim]{action} row to {sink}[/dim]")
 
             if once:
                 console.print("[bold green][OK][/bold green] Completed single pass.")
@@ -144,8 +147,9 @@ def watch_callback(
     task: str = typer.Option(..., "--task", help="AI task identifier to execute for new records"),
     poll_interval: float = typer.Option(1.0, "--poll-interval", min=0.1, help="Polling interval in seconds for file changes"),
     once: bool = typer.Option(False, "--once/--continuous", help="Process the file once instead of watching continuously"),
+    append: bool = typer.Option(True, "--append/--replace", help="Append rows or replace entire sink on each update"),
 ) -> None:
     """Entry point for the `sodacan watch` command."""
     if ctx.invoked_subcommand is not None:
         return
-    watch_source(source=source, sink=sink, task=task, poll_interval=poll_interval, once=once)
+    watch_source(source=source, sink=sink, task=task, poll_interval=poll_interval, once=once, append=append)
