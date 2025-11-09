@@ -120,7 +120,7 @@ def watch_source(
                     
                     df = pd.DataFrame([enriched])
                     # Use append mode for watch command to add rows incrementally
-                    success = sinks.save_to_sink(df, sink, sink_config, append=True)
+                    success = sinks.save_to_sink(df, sink, sink_config, mode='append')
                     if success:
                         console.print(f"[dim]Appended row to {sink}[/dim]")
 
