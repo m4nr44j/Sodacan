@@ -46,10 +46,10 @@ def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-2.5-flash"
     text_content = ""
     try:
         with pdfplumber.open(pdf_path) as pdf:
-            # Extract page 41 specifically (page 40 in 0-indexed)
-            if len(pdf.pages) >= 41:
-                console.print(f"[dim]Extracting page 41 (revenue table)...[/dim]")
-                text_content = pdf.pages[40].extract_text() or ""
+            # Extract page 35 specifically (page 34 in 0-indexed)
+            if len(pdf.pages) >= 35:
+                console.print(f"[dim]Extracting page 35 (revenue table)...[/dim]")
+                text_content = pdf.pages[34].extract_text() or ""
             else:
                 # Fallback: extract all pages if PDF is shorter
                 console.print(f"[dim]PDF has {len(pdf.pages)} pages, extracting all...[/dim]")
