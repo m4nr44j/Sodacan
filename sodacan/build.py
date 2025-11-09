@@ -19,7 +19,7 @@ from executor import start_executor_session, execute_instructions
 console = Console()
 
 
-def format_dataframe_preview(df: pd.DataFrame, max_rows: int = 5, max_cols: int = 8) -> str:
+def format_dataframe_preview(df: pd.DataFrame, max_rows: int = 20, max_cols: int = 8) -> str:
     """Format DataFrame as a string preview."""
     preview_df = df.head(max_rows)
     
@@ -51,7 +51,7 @@ def show_dataframe_preview(df: pd.DataFrame):
         table.add_column(str(col), overflow="fold")
     
     # Add rows
-    for idx, row in df.head(5).iterrows():
+    for idx, row in df.head(20).iterrows():
         table.add_row(*[str(val)[:30] if pd.notna(val) else "NaN" for val in row[display_cols].values])
     
     console.print(table)

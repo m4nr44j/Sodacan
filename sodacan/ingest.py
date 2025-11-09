@@ -111,7 +111,7 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
     for col in df.columns[:5]:  # Show first 5 columns
         table.add_column(col, overflow="fold")
     
-    for idx, row in df.head(5).iterrows():
+    for idx, row in df.head(20).iterrows():
         table.add_row(*[str(val)[:30] for val in row.values[:5]])
     
     console.print(table)

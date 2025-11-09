@@ -7,7 +7,7 @@
 # AI Configuration
 ai:
   # This is the model that powers the 'soda build' translator and 'soda watch' enricher
-  model: "gemini-1.5-pro"
+  model: "gemini-2.5-flash"
 
 # Default settings
 source_defaults:
