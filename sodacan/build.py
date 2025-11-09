@@ -213,8 +213,9 @@ def build_interactive(source: str) -> bool:
 [bold]Available commands:[/bold]
 • Natural language: "rename 'col' to 'new_col'", "drop null rows", etc.
 • merge_10Q "s3://bucket/file.pdf" --company "Google" --quarter "Q2-2025": Merge 10-Q PDF from S3
-• save to <sink>: Save to configured sink (e.g., 'save to snowflake_prod "QBR_FINAL"')
-• save to <sink1> and <sink2>: Save to multiple sinks
+• save to <sink> "table": Save to configured sink (replaces existing data)
+• append to <sink> "table": Append to configured sink (adds to existing data)
+• save/append to <sink1> and <sink2>: Save to multiple sinks
 • preview: Show current data preview
 • undo: Revert to previous DataFrame state
 • redo: Re-apply transformation after undo
@@ -299,6 +300,63 @@ def build_interactive(source: str) -> bool:
                         console.print("[red][ERROR][/red] Merge failed")
                 else:
                     console.print("[red][ERROR][/red] Invalid merge_10Q syntax. Use: merge_10Q \"s3://bucket/file.pdf\" --company \"Google\" --quarter \"Q2-2025\"")
+                continue
+            
+            # Check for append command (supports multiple sinks: "append to sink1 and sink2")
+            if command.lower().startswith('append to '):
+                rest = command[10:].strip()
+                
+                # Parse multiple sinks: "snowflake_prod 'QBR_FINAL_DATA' and google_sheet_bi"
+                sinks_to_save = []
+                if ' and ' in rest:
+                    parts = rest.split(' and ')
+                    for part in parts:
+                        part = part.strip()
+                        # Check for table name in quotes
+                        if "'" in part or '"' in part:
+                            # Extract sink name and table name
+                            import re
+                            match = re.search(r"(\w+)\s+['\"]([^'\"]+)['\"]", part)
+                            if match:
+                                sink_name = match.group(1)
+                                table_name = match.group(2)
+                                sinks_to_save.append((sink_name, {'table_name': table_name, 'mode': 'append'}))
+                            else:
+                                sink_name = part.split()[0]
+                                sinks_to_save.append((sink_name, {'mode': 'append'}))
+                        else:
+                            sink_name = part.split()[0]
+                            sinks_to_save.append((sink_name, {'mode': 'append'}))
+                else:
+                    # Single sink, check for table name
+                    import re
+                    match = re.search(r"(\w+)\s+['\"]([^'\"]+)['\"]", rest)
+                    if match:
+                        sink_name = match.group(1)
+                        table_name = match.group(2)
+                        sinks_to_save.append((sink_name, {'table_name': table_name, 'mode': 'append'}))
+                    else:
+                        sink_name = rest.split()[0]
+                        sinks_to_save.append((sink_name, {'mode': 'append'}))
+                
+                # Append to all sinks
+                all_success = True
+                for sink_name, kwargs in sinks_to_save:
+                    sink_config = get_sink_config(sink_name)
+                    if not sink_config:
+                        console.print(f"[red][ERROR][/red] Sink '{sink_name}' not found in config")
+                        all_success = False
+                        continue
+                    
+                    console.print(f"\n[bold cyan]Appending to {sink_name}...[/bold cyan]")
+                    success = save_to_sink(df, sink_name, sink_config, **kwargs)
+                    if not success:
+                        all_success = False
+                
+                if all_success:
+                    console.print(f"\n[bold green][OK] Successfully appended to all sinks![/bold green]")
+                else:
+                    console.print(f"\n[bold yellow]Some appends failed. Check errors above.[/bold yellow]")
                 continue
             
             # Check for save command (supports multiple sinks: "save to sink1 and sink2")

@@ -132,8 +132,12 @@ def generate_insert_statements(df: pd.DataFrame, table_name: str, schema: Option
     return '\n\n'.join(insert_lines)
 
 
-def save_to_snowflake_direct(df: pd.DataFrame, sink_config: Dict[str, Any], table_name: str) -> bool:
-    """Save DataFrame directly to Snowflake with automatic data insertion."""
+def save_to_snowflake_direct(df: pd.DataFrame, sink_config: Dict[str, Any], table_name: str, mode: str = 'replace') -> bool:
+    """Save DataFrame directly to Snowflake with automatic data insertion.
+    
+    Args:
+        mode: 'replace' (default) truncates table before inserting, 'append' adds rows
+    """
     if not SNOWFLAKE_AVAILABLE:
         console.print("[red][ERROR][/red] snowflake-connector-python not installed. Run: pip install snowflake-connector-python")
         return False
@@ -206,8 +210,12 @@ def save_to_snowflake_direct(df: pd.DataFrame, sink_config: Dict[str, Any], tabl
         """
         cursor.execute(create_table_sql)
         
-        # Truncate table (replace mode)
-        cursor.execute(f"TRUNCATE TABLE IF EXISTS {table_name}")
+        # Truncate table only if mode is 'replace'
+        if mode == 'replace':
+            console.print(f"[dim]Replacing data in {table_name}...[/dim]")
+            cursor.execute(f"TRUNCATE TABLE IF EXISTS {table_name}")
+        else:
+            console.print(f"[dim]Appending to {table_name}...[/dim]")
         
         # Insert data in batches
         console.print(f"[dim]Inserting {len(df)} rows...[/dim]")
@@ -548,6 +556,7 @@ def save_to_sink(df: pd.DataFrame, sink_name: str, sink_config: Dict[str, Any], 
     """Save DataFrame to the specified sink."""
     sink_type = sink_config.get('type', sink_name.lower())
     auto_connect = sink_config.get('auto_connect', True)  # Default to auto-connect
+    mode = kwargs.get('mode', 'replace')  # 'replace' or 'append'
     
     if sink_type == 'sqlite' or sink_name == 'powerbi':
         database_file = sink_config.get('database_file', './prod_dashboard.db')
@@ -565,7 +574,7 @@ def save_to_sink(df: pd.DataFrame, sink_name: str, sink_config: Dict[str, Any], 
         # Check if we should auto-connect or generate SQL file
         if auto_connect and sink_config.get('account') and sink_config.get('user') and sink_config.get('password'):
             # Direct connection with automatic insertion
-            return save_to_snowflake_direct(df, sink_config, table_name)
+            return save_to_snowflake_direct(df, sink_config, table_name, mode=mode)
         else:
             # Generate SQL file with data
             console.print("[yellow][!][/yellow] No Snowflake credentials found. Generating SQL file instead.")
