@@ -8,7 +8,7 @@ from rich.table import Table
 from rich.panel import Panel
 
 from sodacan.config import load_config, get_sink_config
-from sodacan.ai import translate_natural_language_to_pandas
+from sodacan.ai import translate_natural_language_to_pandas, extract_pdf_to_dataframe
 from sodacan.sinks import save_to_sink
 
 # Add parent directory to path to import model and executor
@@ -80,7 +80,39 @@ def build_interactive(source: str) -> bool:
     df = None
     
     # Load based on file type
-    if source_path.suffix.lower() == '.csv':
+    if source_path.suffix.lower() == '.pdf':
+        console.print("[dim]Extracting data from PDF using AI...[/dim]")
+        model_name = config.get("ai", {}).get("model", "gemini-2.5-flash")
+        csv_data = extract_pdf_to_dataframe(str(source_path), model_name)
+        if not csv_data:
+            console.print(f"[red]✗[/red] Could not extract data from PDF")
+            return False
+        
+        # Parse CSV string into DataFrame
+        from io import StringIO
+        try:
+            df = pd.read_csv(StringIO(csv_data))
+            console.print(f"[green]✓[/green] Extracted {len(df)} rows from PDF")
+        except Exception as e:
+            # If CSV parsing fails, the PDF might not have tabular data
+            # Create a simple DataFrame with the extracted text
+            console.print(f"[yellow]⚠[/yellow] PDF doesn't contain tabular data. Creating text DataFrame...")
+            console.print(f"[dim]CSV parse error: {e}[/dim]")
+            # Try to create a DataFrame from the raw text
+            lines = csv_data.strip().split('\n')
+            if len(lines) > 1 and ',' in lines[0]:
+                # Might be CSV but with parsing issues - try with error handling
+                try:
+                    df = pd.read_csv(StringIO(csv_data), on_bad_lines='skip', engine='python')
+                except:
+                    # Last resort: create single-column DataFrame
+                    df = pd.DataFrame({'content': [csv_data]})
+            else:
+                # Not CSV format - create single-column DataFrame
+                df = pd.DataFrame({'content': [csv_data]})
+            console.print(f"[green]✓[/green] Created DataFrame with {len(df)} row(s) from PDF text")
+    
+    elif source_path.suffix.lower() == '.csv':
         encoding = config.get("source_defaults", {}).get("csv_encoding", "utf-8")
         try:
             df = pd.read_csv(source_path, encoding=encoding)
@@ -102,7 +134,7 @@ def build_interactive(source: str) -> bool:
         df = pd.read_json(source_path)
     
     else:
-        console.print(f"[red]✗[/red] Unsupported file type")
+        console.print(f"[red]✗[/red] Unsupported file type: {source_path.suffix}")
         return False
     
     if df is None or df.empty:

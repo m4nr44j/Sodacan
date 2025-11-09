@@ -48,8 +48,27 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
         
         # Parse CSV string into DataFrame
         from io import StringIO
-        df = pd.read_csv(StringIO(csv_data))
-        console.print(f"[green]✓[/green] Extracted {len(df)} rows from PDF")
+        try:
+            df = pd.read_csv(StringIO(csv_data))
+            console.print(f"[green]✓[/green] Extracted {len(df)} rows from PDF")
+        except Exception as e:
+            # If CSV parsing fails, the PDF might not have tabular data
+            # Create a simple DataFrame with the extracted text
+            console.print(f"[yellow]⚠[/yellow] PDF doesn't contain tabular data. Creating text DataFrame...")
+            console.print(f"[dim]CSV parse error: {e}[/dim]")
+            # Try to create a DataFrame from the raw text
+            lines = csv_data.strip().split('\n')
+            if len(lines) > 1 and ',' in lines[0]:
+                # Might be CSV but with parsing issues - try with error handling
+                try:
+                    df = pd.read_csv(StringIO(csv_data), on_bad_lines='skip', engine='python')
+                except:
+                    # Last resort: create single-column DataFrame
+                    df = pd.DataFrame({'content': [csv_data]})
+            else:
+                # Not CSV format - create single-column DataFrame
+                df = pd.DataFrame({'content': [csv_data]})
+            console.print(f"[green]✓[/green] Created DataFrame with {len(df)} row(s) from PDF text")
     
     elif source_path.suffix.lower() == '.csv':
         encoding = config.get("source_defaults", {}).get("csv_encoding", "utf-8")

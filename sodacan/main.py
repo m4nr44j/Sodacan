@@ -133,7 +133,7 @@ def ingest_alias(
 
 @app.command()
 def build(
-    source: str = typer.Argument(..., help="Source file path (CSV, Excel, JSON)"),
+    source: str = typer.Argument(..., help="Source file path (PDF, CSV, Excel, JSON)"),
     interactive: bool = typer.Option(True, "--interactive/--no-interactive", help="Run in interactive REPL mode")
 ):
     """Build and clean data interactively."""
