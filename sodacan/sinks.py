@@ -436,11 +436,16 @@ def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsh
         # Clear existing data
         worksheet.clear()
         
-        # Convert datetime columns to strings for JSON serialization
+        # Convert datetime and decimal columns to JSON-serializable types
+        from decimal import Decimal
         df_copy = df.copy()
         for col in df_copy.columns:
+            # Convert datetime to string
             if df_copy[col].dtype == 'datetime64[ns]' or str(df_copy[col].dtype).startswith('datetime'):
                 df_copy[col] = df_copy[col].astype(str)
+            # Convert Decimal and other non-serializable object types
+            elif df_copy[col].dtype == 'object':
+                df_copy[col] = df_copy[col].apply(lambda x: float(x) if isinstance(x, Decimal) else x)
         
         # Write headers
         headers = df_copy.columns.tolist()
