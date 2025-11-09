@@ -20,25 +20,7 @@ sources:
     warehouse: SODA_WH
     database: HACKATHON_DB
     schema: PUBLIC
-    query: |
-      SELECT
-        'Fictional Tech Inc.' AS Company,
-        CASE 
-          WHEN t.Product_SKU LIKE 'SaaS%' THEN 'SaaS'
-          WHEN t.Product_SKU LIKE 'Cloud%' THEN 'Cloud Services'
-          ELSE 'Other'
-        END AS Business_Segment,
-        CASE 
-          WHEN MONTH(t.Sale_Timestamp) IN (4,5,6) THEN 'Q2-2025'
-          WHEN MONTH(t.Sale_Timestamp) IN (7,8,9) THEN 'Q3-2025'
-          ELSE 'Other'
-        END AS Quarter,
-        SUM(t.Sale_Amount) / 1000000 AS Revenue_Millions,
-        'N/A' AS Commentary
-      FROM INTERNAL_TRANSACTIONS t
-      WHERE MONTH(t.Sale_Timestamp) IN (4,5,6,7,8,9)
-      GROUP BY 1, 2, 3
-      ORDER BY 3, 2;
+    query: "SELECT * FROM INTERNAL_TRANSACTIONS"
 sinks:
   google_sheet_live:
     type: googlesheets
