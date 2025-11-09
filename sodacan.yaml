@@ -20,12 +20,7 @@ sources:
     warehouse: SODA_WH
     database: HACKATHON_DB
     schema: PUBLIC
-    query: "SELECT\n    'Fictional Tech Inc.' AS Company,\n    p.Business_Segment,\n\
-      \    CASE \n        WHEN MONTH(t.Sale_Timestamp) IN (4,5,6) THEN 'Q2-2025'\n\
-      \        WHEN MONTH(t.Sale_Timestamp) IN (7,8,9) THEN 'Q3-2025'\n    END AS\
-      \ Quarter,\n    SUM(t.Sale_Amount) / 1000000 AS Revenue_Millions,\n    'N/A'\
-      \ AS Commentary\nFROM INTERNAL_TRANSACTIONS t\nJOIN PRODUCT_SEGMENTS p ON t.Product_SKU\
-      \ = p.Product_SKU\nGROUP BY 1, 2, 3\nORDER BY 3, 2;\n"
+    query: "SELECT\n    'Fictional Tech Inc.' AS Company,\n    COALESCE(t.Product_Category, 'Other') AS Business_Segment,\n    CASE \n        WHEN MONTH(t.Sale_Timestamp) IN (4,5,6) THEN 'Q2-2025'\n        WHEN MONTH(t.Sale_Timestamp) IN (7,8,9) THEN 'Q3-2025'\n        ELSE 'Other'\n    END AS Quarter,\n    SUM(t.Sale_Amount) / 1000000 AS Revenue_Millions,\n    'N/A' AS Commentary\nFROM INTERNAL_TRANSACTIONS t\nWHERE MONTH(t.Sale_Timestamp) IN (4,5,6,7,8,9)\nGROUP BY 1, 2, 3\nORDER BY 3, 2;"
 sinks:
   google_sheet_live:
     type: googlesheets
