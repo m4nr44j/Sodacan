@@ -11,6 +11,13 @@ from rich.table import Table
 from rich.text import Text
 from rich.align import Align
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv is optional
+
 try:
     from model import start_soda_chat_session
 except Exception:  # pragma: no cover - optional dependency
