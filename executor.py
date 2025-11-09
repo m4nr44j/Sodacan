@@ -7,7 +7,6 @@ import json
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY_EXECUTOR") or os.getenv("GEMINI_API_KEY")
 
-# Executor System Prompt - Takes JSON instructions and generates database code
 EXECUTOR_SYSTEM_PROMPT = """
 You are a specialized "Code Executor" AI. You receive JSON instructions from an upstream
 "Analyzer" AI and generate executable database code.
@@ -68,7 +67,7 @@ CODE_GENERATION_SAFETY_SETTINGS = [
 ]
 
 GENERATION_CONFIG = GenerationConfig(
-    temperature=0.1,  # Keep it low and predictable
+    temperature=0.1,  
     top_p=1.0,
     top_k=1
 )
@@ -116,7 +115,6 @@ def execute_instructions(chat_session, instructions: dict, df_preview: str = "")
     if intent == "sink_export" or one_shot_prompt == "SINK_COMMAND":
         return "SINK_COMMAND"
     
-    # Build prompt for executor
     prompt = f"""
 **Instructions from Analyzer:**
 Intent: {intent}
@@ -147,7 +145,6 @@ Generate the executable code based on these instructions. Return ONLY the code (
 
 if __name__ == "__main__":
     executor = start_executor_session()
-    # Test
     test_instructions = {
         "intent": "pandas_transform",
         "one_shot_prompt": "Generate pandas code to rename column 'sales' to 'revenue'"
