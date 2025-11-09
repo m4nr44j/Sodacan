@@ -147,6 +147,12 @@ def save_to_snowflake_direct(df: pd.DataFrame, sink_config: Dict[str, Any], tabl
     schema = sink_config.get('schema', 'PUBLIC')
     role = sink_config.get('role', 'ANALYST')
     
+    # Clean account (remove https:// and .snowflakecomputing.com if present)
+    if '://' in account:
+        account = account.split('://')[1]
+    if '.snowflakecomputing.com' in account:
+        account = account.replace('.snowflakecomputing.com', '')
+    
     if not all([account, user, password]):
         console.print("[red]✗[/red] Snowflake credentials missing. Set account, user, and password in config.")
         return False
