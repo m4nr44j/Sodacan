@@ -53,23 +53,29 @@ def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-2.5-flash"
         return None
     
     # Use AI to structure the data
-    full_prompt = """ou are an expert data extraction assistant.
-Your task is to find and extract all structured tabular data from the following text content.
+    full_prompt = """You are an expert financial analyst specializing in SEC filings.
 
-1.  **Analyze the entire text:** Scan all the provided content.
-2.  **Isolate tables:** Identify all data that is structured in a table format. Ignore all non-tabular content like paragraphs, introductions, summaries, or standalone text.
-3.  **Format as CSV:** Convert all found tables into a single CSV-formatted string.
-4.  **Include headers:** The CSV must have a header row. If multiple tables are found, do your best to create a single, logical CSV.
-5.  **Strict Output:** Return ONLY the CSV-formatted string and nothing else. Do not add any conversational text like "Here is the CSV."
+Your task:
+1. **Find the revenue breakdown table:** Scan the entire 10-Q report to find the table showing "Revenues" broken down by business segment or product category.
+2. **Extract ONLY that table:** Ignore all other tables (like securities listings, balance sheets, cash flows).
+3. **Look for:** Tables with columns like "Segment Name", "Revenue", "Product Category", "Geographic Region", or similar financial breakdowns.
+4. **Format as CSV:** Convert the revenue breakdown table into a clean CSV format.
+5. **Include headers:** Use clear column names like "Segment", "Revenue_Millions", "Period", etc.
+6. **Strict Output:** Return ONLY the CSV-formatted string. No explanations or markdown.
+
+**What to look for:**
+- Tables titled "Revenues by Segment", "Segment Results", "Product Revenue", or similar
+- Usually found in "Results of Operations" or "Management's Discussion" sections
+- Contains actual revenue numbers (in millions or billions)
 
 **Fallback:**
-If you are confident that NO structured tabular data exists in the entire text, return this *exact* CSV string:
+If no revenue breakdown table exists, return:
 "status"
-"No tabular data found."
+"No revenue data found."
 
 ---
 Text content:
-""" + text_content[:8000]  # Limit to avoid token limits
+""" + text_content[:15000]  # Increased limit for more content
     
     try:
         model = genai.GenerativeModel(model_name)
