@@ -142,14 +142,19 @@ watch_app = typer.Typer(help="Monitor sources and apply AI tasks before saving t
 @watch_app.callback()
 def watch_callback(
     ctx: typer.Context,
-    source: Path = typer.Option(..., "--source", resolve_path=True, help="Path to the source CSV file to watch"),
-    sink: str = typer.Option(..., "--sink", help="Sink name from the configuration"),
-    task: str = typer.Option(..., "--task", help="AI task identifier to execute for new records"),
-    poll_interval: float = typer.Option(1.0, "--poll-interval", min=0.1, help="Polling interval in seconds for file changes"),
-    once: bool = typer.Option(False, "--once/--continuous", help="Process the file once instead of watching continuously"),
-    append: bool = typer.Option(True, "--append/--replace", help="Append rows or replace entire sink on each update"),
+    source: Path = typer.Argument(..., help="Path to the source CSV file to watch"),
+    sink: str = typer.Argument(..., help="Sink name from the configuration"),
+    poll_interval: float = typer.Argument(30.0, help="Polling interval in seconds"),
+    mode: str = typer.Argument("replace", help="'replace' or 'append'"),
+    task: str = typer.Option("pass_through", "--task", help="AI task to apply (default: pass_through for no AI)"),
+    once: bool = typer.Option(False, "--once", help="Process once and exit"),
 ) -> None:
-    """Entry point for the `sodacan watch` command."""
+    """Watch a CSV file and sync it to a sink.
+    
+    Example: soda watch transactions.csv google_sheet_live 30 replace
+    """
     if ctx.invoked_subcommand is not None:
         return
+    
+    append = (mode.lower() != 'replace')
     watch_source(source=source, sink=sink, task=task, poll_interval=poll_interval, once=once, append=append)
