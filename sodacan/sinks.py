@@ -436,15 +436,21 @@ def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsh
         # Clear existing data
         worksheet.clear()
         
+        # Convert datetime columns to strings for JSON serialization
+        df_copy = df.copy()
+        for col in df_copy.columns:
+            if df_copy[col].dtype == 'datetime64[ns]' or str(df_copy[col].dtype).startswith('datetime'):
+                df_copy[col] = df_copy[col].astype(str)
+        
         # Write headers
-        headers = df.columns.tolist()
+        headers = df_copy.columns.tolist()
         worksheet.append_row(headers)
         
         # Write data in batches
-        console.print(f"[dim]Writing {len(df)} rows to Google Sheets...[/dim]")
+        console.print(f"[dim]Writing {len(df_copy)} rows to Google Sheets...[/dim]")
         batch_size = 100
-        for i in range(0, len(df), batch_size):
-            batch = df.iloc[i:i+batch_size]
+        for i in range(0, len(df_copy), batch_size):
+            batch = df_copy.iloc[i:i+batch_size]
             values = batch.values.tolist()
             worksheet.append_rows(values)
         
