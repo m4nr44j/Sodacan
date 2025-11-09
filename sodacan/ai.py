@@ -42,12 +42,19 @@ def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-2.5-flash"
     if not configure_gemini():
         return None
     
-    # Extract text from PDF
+    # Extract text from PDF - focus on page 35 where revenue table typically is
     text_content = ""
     try:
         with pdfplumber.open(pdf_path) as pdf:
-            for page in pdf.pages:
-                text_content += page.extract_text() or ""
+            # Extract page 35 specifically (page 34 in 0-indexed)
+            if len(pdf.pages) >= 35:
+                console.print(f"[dim]Extracting page 35 (revenue table)...[/dim]")
+                text_content = pdf.pages[34].extract_text() or ""
+            else:
+                # Fallback: extract all pages if PDF is shorter
+                console.print(f"[dim]PDF has {len(pdf.pages)} pages, extracting all...[/dim]")
+                for page in pdf.pages:
+                    text_content += page.extract_text() or ""
     except Exception as e:
         console.print(f"[red][ERROR][/red] Error reading PDF: {e}")
         return None
