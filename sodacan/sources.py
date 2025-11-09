@@ -188,10 +188,18 @@ def download_from_s3(s3_path: str, local_path: Optional[Path] = None) -> Optiona
         return local_path
         
     except ClientError as e:
-        console.print(f"[red][ERROR][/red] Error downloading from S3: {e}")
+        error_code = e.response['Error']['Code']
+        error_msg = e.response['Error']['Message']
+        console.print(f"[red][ERROR][/red] S3 Error ({error_code}): {error_msg}")
+        console.print(f"[dim]Bucket: {bucket_name}, Key: '{object_key}'[/dim]")
+        if error_code == 'NoSuchKey':
+            console.print("[dim]💡 Tip: Check the object key. Spaces and special characters may need URL encoding.[/dim]")
         return None
     except Exception as e:
-        console.print(f"[red][ERROR][/red] Unexpected error: {e}")
+        import traceback
+        console.print(f"[red][ERROR][/red] Unexpected error: {type(e).__name__}: {str(e)}")
+        console.print(f"[dim]Bucket: {bucket_name}, Key: '{object_key}'[/dim]")
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
         return None
 
 
