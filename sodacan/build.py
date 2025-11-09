@@ -8,9 +8,11 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
-from sodacan.config import load_config, get_sink_config, get_preview_config
+from sodacan.config import load_config, get_sink_config, get_preview_config, get_source_config
 from sodacan.ai import translate_natural_language_to_pandas, extract_pdf_to_dataframe
 from sodacan.sinks import save_to_sink
+from sodacan.sources import load_from_source
+from sodacan.pdf_merge import merge_10q_pdf
 
 # Add parent directory to path to import model and executor
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -83,75 +85,84 @@ def build_interactive(source: str) -> bool:
     if not config:
         return False
     
-    # Load source data
-    source_path = Path(source)
-    if not source_path.exists():
-        console.print(f"[red]✗[/red] Source file not found: {source}")
-        return False
-    
-    df = None
-    
-    # Load based on file type
-    if source_path.suffix.lower() == '.pdf':
-        console.print("[dim]Extracting data from PDF using AI...[/dim]")
-        model_name = config.get("ai", {}).get("model", "gemini-2.5-flash")
-        csv_data = extract_pdf_to_dataframe(str(source_path), model_name)
-        if not csv_data:
-            console.print(f"[red]✗[/red] Could not extract data from PDF")
+    # Check if source is a configured source name (not a file path)
+    source_config = get_source_config(source)
+    if source_config:
+        # It's a configured source (e.g., "snowflake_prod")
+        console.print(f"[dim]Loading from configured source: {source}[/dim]")
+        df = load_from_source(source, source_config)
+        if df is None or df.empty:
+            return False
+    else:
+        # It's a file path
+        source_path = Path(source)
+        if not source_path.exists():
+            console.print(f"[red]✗[/red] Source file or source name not found: {source}")
             return False
         
-        # Parse CSV string into DataFrame
-        from io import StringIO
-        try:
-            df = pd.read_csv(StringIO(csv_data))
-            console.print(f"[green]✓[/green] Extracted {len(df)} rows from PDF")
-        except Exception as e:
-            # If CSV parsing fails, the PDF might not have tabular data
-            # Create a simple DataFrame with the extracted text
-            console.print(f"[yellow]⚠[/yellow] PDF doesn't contain tabular data. Creating text DataFrame...")
-            console.print(f"[dim]CSV parse error: {e}[/dim]")
-            # Try to create a DataFrame from the raw text
-            lines = csv_data.strip().split('\n')
-            if len(lines) > 1 and ',' in lines[0]:
-                # Might be CSV but with parsing issues - try with error handling
-                try:
-                    df = pd.read_csv(StringIO(csv_data), on_bad_lines='skip', engine='python')
-                except:
-                    # Last resort: create single-column DataFrame
-                    df = pd.DataFrame({'content': [csv_data]})
-            else:
-                # Not CSV format - create single-column DataFrame
-                df = pd.DataFrame({'content': [csv_data]})
-            console.print(f"[green]✓[/green] Created DataFrame with {len(df)} row(s) from PDF text")
-    
-    elif source_path.suffix.lower() == '.csv':
-        encoding = config.get("source_defaults", {}).get("csv_encoding", "utf-8")
-        try:
-            df = pd.read_csv(source_path, encoding=encoding)
-        except UnicodeDecodeError:
-            for enc in ['latin-1', 'iso-8859-1', 'cp1252']:
-                try:
-                    df = pd.read_csv(source_path, encoding=enc)
-                    break
-                except:
-                    continue
-            if df is None:
-                console.print(f"[red]✗[/red] Could not read CSV")
+        df = None
+        
+        # Load based on file type
+        if source_path.suffix.lower() == '.pdf':
+            console.print("[dim]Extracting data from PDF using AI...[/dim]")
+            model_name = config.get("ai", {}).get("model", "gemini-2.5-flash")
+            csv_data = extract_pdf_to_dataframe(str(source_path), model_name)
+            if not csv_data:
+                console.print(f"[red]✗[/red] Could not extract data from PDF")
                 return False
-    
-    elif source_path.suffix.lower() in ['.xlsx', '.xls']:
-        df = pd.read_excel(source_path)
-    
-    elif source_path.suffix.lower() == '.json':
-        df = pd.read_json(source_path)
-    
-    else:
-        console.print(f"[red]✗[/red] Unsupported file type: {source_path.suffix}")
-        return False
-    
-    if df is None or df.empty:
-        console.print(f"[red]✗[/red] No data loaded")
-        return False
+            
+            # Parse CSV string into DataFrame
+            from io import StringIO
+            try:
+                df = pd.read_csv(StringIO(csv_data))
+                console.print(f"[green]✓[/green] Extracted {len(df)} rows from PDF")
+            except Exception as e:
+                # If CSV parsing fails, the PDF might not have tabular data
+                # Create a simple DataFrame with the extracted text
+                console.print(f"[yellow]⚠[/yellow] PDF doesn't contain tabular data. Creating text DataFrame...")
+                console.print(f"[dim]CSV parse error: {e}[/dim]")
+                # Try to create a DataFrame from the raw text
+                lines = csv_data.strip().split('\n')
+                if len(lines) > 1 and ',' in lines[0]:
+                    # Might be CSV but with parsing issues - try with error handling
+                    try:
+                        df = pd.read_csv(StringIO(csv_data), on_bad_lines='skip', engine='python')
+                    except:
+                        # Last resort: create single-column DataFrame
+                        df = pd.DataFrame({'content': [csv_data]})
+                else:
+                    # Not CSV format - create single-column DataFrame
+                    df = pd.DataFrame({'content': [csv_data]})
+                console.print(f"[green]✓[/green] Created DataFrame with {len(df)} row(s) from PDF text")
+        
+        elif source_path.suffix.lower() == '.csv':
+            encoding = config.get("source_defaults", {}).get("csv_encoding", "utf-8")
+            try:
+                df = pd.read_csv(source_path, encoding=encoding)
+            except UnicodeDecodeError:
+                for enc in ['latin-1', 'iso-8859-1', 'cp1252']:
+                    try:
+                        df = pd.read_csv(source_path, encoding=enc)
+                        break
+                    except:
+                        continue
+                if df is None:
+                    console.print(f"[red]✗[/red] Could not read CSV")
+                    return False
+        
+        elif source_path.suffix.lower() in ['.xlsx', '.xls']:
+            df = pd.read_excel(source_path)
+        
+        elif source_path.suffix.lower() == '.json':
+            df = pd.read_json(source_path)
+        
+        else:
+            console.print(f"[red]✗[/red] Unsupported file type: {source_path.suffix}")
+            return False
+        
+        if df is None or df.empty:
+            console.print(f"[red]✗[/red] No data loaded")
+            return False
     
     console.print(f"[green]✓[/green] Loaded {len(df)} rows\n")
     
@@ -188,7 +199,9 @@ def build_interactive(source: str) -> bool:
                 console.print(Panel("""
 [bold]Available commands:[/bold]
 • Natural language: "rename 'col' to 'new_col'", "drop null rows", etc.
-• save to <sink>: Save to configured sink (e.g., 'save to snowflake')
+• merge_10Q "s3://bucket/file.pdf" --company "Google" --quarter "Q2-2025": Merge 10-Q PDF from S3
+• save to <sink>: Save to configured sink (e.g., 'save to snowflake_prod "QBR_FINAL"')
+• save to <sink1> and <sink2>: Save to multiple sinks
 • preview: Show current data preview
 • exit/quit: Exit without saving
                 """, title="Help"))
@@ -198,20 +211,95 @@ def build_interactive(source: str) -> bool:
                 show_dataframe_preview(df)
                 continue
             
-            # Check for save command
+            # Check for merge_10Q command
+            if command.lower().startswith('merge_10q ') or command.lower().startswith('merge_10q '):
+                # Parse: merge_10Q "s3://bucket/file.pdf" --company "Google" --quarter "Q2-2025"
+                parts = command.split('"')
+                if len(parts) >= 2:
+                    s3_path = parts[1]
+                    # Extract company and quarter from command
+                    company = "Google"  # default
+                    quarter = "Q2-2025"  # default
+                    if '--company' in command:
+                        try:
+                            company_idx = command.index('--company') + len('--company')
+                            company_part = command[company_idx:].strip().split()[0].strip('"\'')
+                            company = company_part
+                        except:
+                            pass
+                    if '--quarter' in command:
+                        try:
+                            quarter_idx = command.index('--quarter') + len('--quarter')
+                            quarter_part = command[quarter_idx:].strip().split()[0].strip('"\'')
+                            quarter = quarter_part
+                        except:
+                            pass
+                    
+                    console.print(f"[dim]Merging 10-Q PDF: {s3_path}[/dim]")
+                    merged_df = merge_10q_pdf(s3_path, company, quarter, df, config)
+                    if merged_df is not None:
+                        df = merged_df
+                        console.print("[green]✓[/green] Merge complete")
+                        show_dataframe_preview(df)
+                    else:
+                        console.print("[red]✗[/red] Merge failed")
+                else:
+                    console.print("[red]✗[/red] Invalid merge_10Q syntax. Use: merge_10Q \"s3://bucket/file.pdf\" --company \"Google\" --quarter \"Q2-2025\"")
+                continue
+            
+            # Check for save command (supports multiple sinks: "save to sink1 and sink2")
             if command.lower().startswith('save to '):
-                sink_name = command[8:].strip()
-                sink_config = get_sink_config(sink_name)
+                rest = command[8:].strip()
                 
-                if not sink_config:
-                    console.print(f"[red]✗[/red] Sink '{sink_name}' not found in config")
-                    continue
+                # Parse multiple sinks: "snowflake_prod 'QBR_FINAL_DATA' and google_sheet_bi"
+                sinks_to_save = []
+                if ' and ' in rest:
+                    parts = rest.split(' and ')
+                    for part in parts:
+                        part = part.strip()
+                        # Check for table name in quotes
+                        if "'" in part or '"' in part:
+                            # Extract sink name and table name
+                            import re
+                            match = re.search(r"(\w+)\s+['\"]([^'\"]+)['\"]", part)
+                            if match:
+                                sink_name = match.group(1)
+                                table_name = match.group(2)
+                                sinks_to_save.append((sink_name, {'table_name': table_name}))
+                            else:
+                                sink_name = part.split()[0]
+                                sinks_to_save.append((sink_name, {}))
+                        else:
+                            sink_name = part.split()[0]
+                            sinks_to_save.append((sink_name, {}))
+                else:
+                    # Single sink, check for table name
+                    import re
+                    match = re.search(r"(\w+)\s+['\"]([^'\"]+)['\"]", rest)
+                    if match:
+                        sink_name = match.group(1)
+                        table_name = match.group(2)
+                        sinks_to_save.append((sink_name, {'table_name': table_name}))
+                    else:
+                        sink_name = rest.split()[0]
+                        sinks_to_save.append((sink_name, {}))
                 
-                console.print(f"\n[bold]💾 Saving to {sink_name}...[/bold]")
-                success = save_to_sink(df, sink_name, sink_config)
+                # Save to all sinks
+                all_success = True
+                for sink_name, kwargs in sinks_to_save:
+                    sink_config = get_sink_config(sink_name)
+                    if not sink_config:
+                        console.print(f"[red]✗[/red] Sink '{sink_name}' not found in config")
+                        all_success = False
+                        continue
+                    
+                    console.print(f"\n[bold]💾 Saving to {sink_name}...[/bold]")
+                    success = save_to_sink(df, sink_name, sink_config, **kwargs)
+                    if not success:
+                        all_success = False
                 
-                if success:
-                    console.print(f"\n[bold green]✓ Success![/bold green] Data saved to {sink_name}")
+                if all_success:
+                    console.print(f"\n[bold green]✓ Success![/bold green] Data saved to all sinks")
                 
                 break
             

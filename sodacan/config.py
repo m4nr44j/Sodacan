@@ -207,6 +207,13 @@ def get_sink_config(sink_name: str) -> Optional[Dict[str, Any]]:
     return sinks.get(sink_name)
 
 
+def get_source_config(source_name: str) -> Optional[Dict[str, Any]]:
+    """Get configuration for a specific source."""
+    config = load_config()
+    sources = config.get("sources", {})
+    return sources.get(source_name)
+
+
 def get_task_config(task_name: str) -> Optional[Dict[str, Any]]:
     """Return the task configuration for the given task identifier."""
     config = load_config()
