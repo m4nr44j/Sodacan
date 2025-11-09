@@ -53,7 +53,7 @@ def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-2.5-flash"
         return None
     
     # Use AI to structure the data
-    full_prompt = """You are an expert data engineer. Extract structured tabular data from the following text content of a PDF report.
+    full_prompt = """You are an expert data engineer. Extract structured tabular data from the following text content of a PDF report. ALso make sure to only parse the pages that contain the tabular data. Ignore the pages that have long texts. 
 
 Return ONLY a CSV-formatted string with headers. If you cannot find tabular data, return a simple CSV with one column called "content" containing the extracted text.
 
