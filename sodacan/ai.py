@@ -53,10 +53,21 @@ def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-2.5-flash"
         return None
     
     # Use AI to structure the data
-    full_prompt = """You are an expert data engineer. Extract structured tabular data from the following text content of a PDF report. ALso make sure to only parse the pages that contain the tabular data. Ignore the pages that have long texts. 
+    full_prompt = """ou are an expert data extraction assistant.
+Your task is to find and extract all structured tabular data from the following text content.
 
-Return ONLY a CSV-formatted string with headers. If you cannot find tabular data, return a simple CSV with one column called "content" containing the extracted text.
+1.  **Analyze the entire text:** Scan all the provided content.
+2.  **Isolate tables:** Identify all data that is structured in a table format. Ignore all non-tabular content like paragraphs, introductions, summaries, or standalone text.
+3.  **Format as CSV:** Convert all found tables into a single CSV-formatted string.
+4.  **Include headers:** The CSV must have a header row. If multiple tables are found, do your best to create a single, logical CSV.
+5.  **Strict Output:** Return ONLY the CSV-formatted string and nothing else. Do not add any conversational text like "Here is the CSV."
 
+**Fallback:**
+If you are confident that NO structured tabular data exists in the entire text, return this *exact* CSV string:
+"status"
+"No tabular data found."
+
+---
 Text content:
 """ + text_content[:8000]  # Limit to avoid token limits
     
@@ -65,7 +76,7 @@ Text content:
         response = model.generate_content(
             full_prompt,
             generation_config=genai.types.GenerationConfig(
-                temperature=0.3,
+                temperature=0.1,
             )
         )
         
@@ -75,6 +86,7 @@ Text content:
             csv_data = csv_data.split("\n", 1)[1].rsplit("\n", 1)[0]
         
         return csv_data
+
     except Exception as e:  # pragma: no cover - runtime safety
         console.print(f"[red][ERROR][/red] Error calling Gemini: {e}")
         return None
@@ -115,7 +127,7 @@ Return the pandas code to execute:"""
         response = model.generate_content(
             full_prompt,
             generation_config=genai.types.GenerationConfig(
-                temperature=0.2,
+                temperature=0.1,
             )
         )
         
