@@ -11,7 +11,7 @@ from rich.panel import Panel
 from sodacan.config import load_config, get_sink_config, get_preview_config, get_source_config
 from sodacan.ai import translate_natural_language_to_pandas, extract_pdf_to_dataframe
 from sodacan.sinks import save_to_sink
-from sodacan.sources import load_from_source
+from sodacan.sources import load_from_source, download_from_s3
 from sodacan.pdf_merge import merge_10q_pdf
 
 # Add parent directory to path to import model and executor
@@ -94,11 +94,20 @@ def build_interactive(source: str) -> bool:
         if df is None or df.empty:
             return False
     else:
-        # It's a file path
-        source_path = Path(source)
-        if not source_path.exists():
-            console.print(f"[red][ERROR][/red] Source file or source name not found: {source}")
-            return False
+        # Check if it's an S3 path
+        if source.startswith('s3://'):
+            console.print(f"[dim]Downloading from S3: {source}[/dim]")
+            source_path = download_from_s3(source)
+            if not source_path:
+                console.print(f"[red][ERROR][/red] Failed to download from S3")
+                return False
+            console.print(f"[green][OK][/green] Downloaded to: {source_path}")
+        else:
+            # It's a local file path
+            source_path = Path(source)
+            if not source_path.exists():
+                console.print(f"[red][ERROR][/red] Source file or source name not found: {source}")
+                return False
         
         df = None
         
