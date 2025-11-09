@@ -73,6 +73,9 @@ def watch_source(
     header: List[str] = []
     last_offset = 0
     output_field = task_config.get("output_field", "task_output")
+    
+    # Check if this is a pass-through task (no AI enrichment needed)
+    is_pass_through = task == "pass_through" or task_config.get("pass_through", False)
 
     console.print(f"[bold][*] Watching[/bold] {source} → {sink} (task: {task})")
     console.print("[dim]Press Ctrl+C to stop.[/dim]" if not once else "[dim]Running single pass...[/dim]")
@@ -104,16 +107,22 @@ def watch_source(
                 console.print(f"[green][OK][/green] Detected {len(records)} new row(s)")
 
                 for record in records:
-                    task_output = ai.run_task_prompt(task_config, record, config)
-                    if task_output is None:
-                        console.print("[red][ERROR][/red] Skipping row due to AI error.")
-                        continue
-
-                    enriched = {**record, output_field: task_output}
+                    if is_pass_through:
+                        # Pass-through: no AI call, just use the record as-is
+                        enriched = record
+                    else:
+                        # Regular task: call AI to enrich the record
+                        task_output = ai.run_task_prompt(task_config, record, config)
+                        if task_output is None:
+                            console.print("[red][ERROR][/red] Skipping row due to AI error.")
+                            continue
+                        enriched = {**record, output_field: task_output}
+                    
                     df = pd.DataFrame([enriched])
-                    success = sinks.save_to_sink(df, sink, sink_config)
+                    # Use append mode for watch command to add rows incrementally
+                    success = sinks.save_to_sink(df, sink, sink_config, append=True)
                     if success:
-                        console.print(f"[dim]Saved enriched row ({enriched}).[/dim]")
+                        console.print(f"[dim]Appended row to {sink}[/dim]")
 
             if once:
                 console.print("[bold green][OK][/bold green] Completed single pass.")

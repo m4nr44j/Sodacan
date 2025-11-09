@@ -51,6 +51,10 @@ sinks:
     type: excel
     output_dir: ./client_exports/
 tasks:
+  pass_through:
+    pass_through: true  # Skip AI processing, just copy rows as-is
+    prompt_template: 'Not used - pass_through mode enabled'
+    output_field: status
   categorize_transaction:
     prompt_template: 'You are a finance expert. Categorize this transaction: {row_dict}
 

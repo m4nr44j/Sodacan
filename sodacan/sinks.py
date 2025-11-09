@@ -390,8 +390,16 @@ TRUNCATE TABLE IF EXISTS {table};
     return sql
 
 
-def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsheet_id: str, worksheet_name: str) -> bool:
-    """Save DataFrame directly to Google Sheets."""
+def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsheet_id: str, worksheet_name: str, append: bool = False) -> bool:
+    """Save DataFrame directly to Google Sheets.
+    
+    Args:
+        df: DataFrame to save
+        sink_config: Sink configuration
+        spreadsheet_id: Google Sheets spreadsheet ID
+        worksheet_name: Worksheet name
+        append: If True, append rows instead of replacing. If False, clear and write.
+    """
     if not GSPREAD_AVAILABLE:
         console.print("[red][ERROR][/red] gspread not installed. Run: pip install gspread google-auth-oauthlib")
         return False
@@ -433,9 +441,6 @@ def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsh
             console.print(f"[dim]Creating new worksheet: {worksheet_name}[/dim]")
             worksheet = spreadsheet.add_worksheet(title=worksheet_name, rows=len(df)+1, cols=len(df.columns))
         
-        # Clear existing data
-        worksheet.clear()
-        
         # Convert datetime and decimal columns to JSON-serializable types
         from decimal import Decimal
         df_copy = df.copy()
@@ -447,19 +452,42 @@ def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsh
             elif df_copy[col].dtype == 'object':
                 df_copy[col] = df_copy[col].apply(lambda x: float(x) if isinstance(x, Decimal) else x)
         
-        # Write headers
-        headers = df_copy.columns.tolist()
-        worksheet.append_row(headers)
-        
-        # Write data in batches
-        console.print(f"[dim]Writing {len(df_copy)} rows to Google Sheets...[/dim]")
-        batch_size = 100
-        for i in range(0, len(df_copy), batch_size):
-            batch = df_copy.iloc[i:i+batch_size]
-            values = batch.values.tolist()
+        if append:
+            # Append mode: just add rows without clearing
+            # Check if worksheet is empty - if so, write headers first
+            try:
+                existing_data = worksheet.get_all_values()
+                if not existing_data or len(existing_data) == 0:
+                    # Worksheet is empty, write headers first
+                    headers = df_copy.columns.tolist()
+                    worksheet.append_row(headers)
+                    console.print(f"[dim]Added headers to empty worksheet[/dim]")
+            except Exception:
+                # If we can't read, assume empty and write headers
+                headers = df_copy.columns.tolist()
+                worksheet.append_row(headers)
+            
+            console.print(f"[dim]Appending {len(df_copy)} rows to Google Sheets...[/dim]")
+            values = df_copy.values.tolist()
             worksheet.append_rows(values)
+            console.print(f"[green][OK][/green] Successfully appended {len(df)} rows to Google Sheets: {spreadsheet.title} > {worksheet_name}")
+        else:
+            # Replace mode: clear and write
+            worksheet.clear()
+            # Write headers
+            headers = df_copy.columns.tolist()
+            worksheet.append_row(headers)
+            
+            # Write data in batches
+            console.print(f"[dim]Writing {len(df_copy)} rows to Google Sheets...[/dim]")
+            batch_size = 100
+            for i in range(0, len(df_copy), batch_size):
+                batch = df_copy.iloc[i:i+batch_size]
+                values = batch.values.tolist()
+                worksheet.append_rows(values)
+            
+            console.print(f"[green][OK][/green] Successfully wrote {len(df)} rows to Google Sheets: {spreadsheet.title} > {worksheet_name}")
         
-        console.print(f"[green][OK][/green] Successfully wrote {len(df)} rows to Google Sheets: {spreadsheet.title} > {worksheet_name}")
         console.print(f"[dim]Spreadsheet URL: https://docs.google.com/spreadsheets/d/{spreadsheet_id}[/dim]")
         return True
         
@@ -564,7 +592,8 @@ def save_to_sink(df: pd.DataFrame, sink_name: str, sink_config: Dict[str, Any], 
     elif sink_type == 'googlesheets' or sink_name == 'googlesheets':
         spreadsheet_id = sink_config.get('spreadsheet_id')
         worksheet_name = sink_config.get('worksheet_name', 'Sheet1')
-        return save_to_googlesheets(df, sink_config, spreadsheet_id, worksheet_name)
+        append = kwargs.get('append', False)  # Support append mode for watch command
+        return save_to_googlesheets(df, sink_config, spreadsheet_id, worksheet_name, append=append)
     
     elif sink_type == 'gcs' or sink_type == 'gcs_parquet' or sink_name == 'gcs':
         bucket_name = sink_config.get('bucket_name')
