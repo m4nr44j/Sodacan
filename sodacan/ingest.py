@@ -47,7 +47,7 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
         source_path = Path(source)
         if not source_path.exists():
             console.print(f"[red][ERROR][/red] Source not found: '{source}' is not a configured source or valid file path")
-            console.print(f"[dim]Tip: Use 'soda config' to see configured sources[/dim]")
+            console.print(f"[dim]Tip: Use 'sodacan config' to see configured sources[/dim]")
             return False
         
         # Handle different file types

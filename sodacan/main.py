@@ -29,7 +29,7 @@ from sodacan import shell as shell_module
 from sodacan import watch as watch_module
 
 app = typer.Typer(
-    name="soda",
+    name="sodacan",
     help="AI Data Workbench - Clean, transform, and ship data with natural language",
     add_completion=False,
     invoke_without_command=True,
@@ -65,14 +65,14 @@ def _render_intro() -> None:
     table = Table.grid(padding=(0, 2))
     table.add_column("Command", style="bold cyan")
     table.add_column("Description", style="dim")
-    table.add_row("soda build <source>", "Interactive AI data workbench")
-    table.add_row("soda watch <source>", "Live feed monitoring with AI enrichment")
-    table.add_row("soda config", "View or edit configuration")
-    table.add_row("soda ingest <source> <sink>", "One-shot data pipeline")
+    table.add_row("sodacan build <source>", "Interactive AI data workbench")
+    table.add_row("sodacan watch <source>", "Live feed monitoring with AI enrichment")
+    table.add_row("sodacan config", "View or edit configuration")
+    table.add_row("sodacan ingest <source> <sink>", "One-shot data pipeline")
 
     console.print(table)
     console.print()
-    console.print(Text("Run 'soda --help' for all commands", style="dim"))
+    console.print(Text("Run 'sodacan --help' for all commands", style="dim"))
 
 
 def config_command(
@@ -120,7 +120,7 @@ def build(
 
 @app.callback()
 def main(ctx: typer.Context):
-    """soda: AI Data Workbench"""
+    """sodacan: AI Data Workbench"""
     # Display logo on all commands
     if ctx.invoked_subcommand is not None:
         _render_logo()
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     if start_soda_chat_session is not None:
         chat = start_soda_chat_session()
         while True:
-            user_input = input("(soda) > ")
+            user_input = input("(sodacan) > ")
             if user_input.lower() in ["exit", "quit"]:
                 break
 

@@ -31,8 +31,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "soda=sodacan.main:cli",
-            "sodacan=sodacan.main:cli",  # Keep for backwards compatibility
+            "sodacan=sodacan.main:cli",
         ],
     },
 )
