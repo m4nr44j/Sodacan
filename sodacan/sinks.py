@@ -453,7 +453,9 @@ def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsh
         return True
         
     except Exception as e:
-        console.print(f"[red]✗[/red] Error writing to Google Sheets: {e}")
+        import traceback
+        console.print(f"[red]✗[/red] Error writing to Google Sheets: {type(e).__name__}: {str(e)}")
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
         return False
 
 
