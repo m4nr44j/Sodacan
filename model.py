@@ -7,6 +7,7 @@ import json
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
+# Analyzer System Prompt - Converts natural language to JSON instructions
 ANALYZER_SYSTEM_PROMPT = """
 You are an AI "Task Analyzer" for a data transformation pipeline. Your sole
 purpose is to analyze a raw user instruction and the current data schema,
@@ -65,7 +66,7 @@ CODE_GENERATION_SAFETY_SETTINGS = [
 ]
 
 GENERATION_CONFIG = GenerationConfig(
-    temperature=0.1,
+    temperature=0.1,  # Keep it low and predictable
     top_p=1.0,
     top_k=1
 )
@@ -143,6 +144,7 @@ Analyze this request and return ONLY the JSON object (no markdown, no explanatio
 
 if __name__ == "__main__":
     session = start_analyzer_session()
+    # Test
     test_schema = "Column: 'sales' (float64), 'region' (object)"
     test_input = "rename sales to revenue"
     result = analyze_user_input(session, test_input, test_schema)

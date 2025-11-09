@@ -62,10 +62,10 @@ def save_to_sqlite(df: pd.DataFrame, database_file: str, table_name: str) -> boo
         df.to_sql(table_name, conn, if_exists='replace', index=False)
         conn.close()
         
-        console.print(f"[green]✓[/green] Saved {len(df)} rows to {database_file}::{table_name}")
+        console.print(f"[green][OK][/green] Saved {len(df)} rows to {database_file}::{table_name}")
         return True
     except Exception as e:
-        console.print(f"[red]✗[/red] Error saving to SQLite: {e}")
+        console.print(f"[red][ERROR][/red] Error saving to SQLite: {e}")
         return False
 
 
@@ -81,10 +81,10 @@ def save_to_excel(df: pd.DataFrame, output_dir: str, filename: Optional[str] = N
         filepath = output_path / filename
         df.to_excel(filepath, index=False, engine='openpyxl')
         
-        console.print(f"[green]✓[/green] Saved {len(df)} rows to {filepath}")
+        console.print(f"[green][OK][/green] Saved {len(df)} rows to {filepath}")
         return True
     except Exception as e:
-        console.print(f"[red]✗[/red] Error saving to Excel: {e}")
+        console.print(f"[red][ERROR][/red] Error saving to Excel: {e}")
         return False
 
 
@@ -135,7 +135,7 @@ def generate_insert_statements(df: pd.DataFrame, table_name: str, schema: Option
 def save_to_snowflake_direct(df: pd.DataFrame, sink_config: Dict[str, Any], table_name: str) -> bool:
     """Save DataFrame directly to Snowflake with automatic data insertion."""
     if not SNOWFLAKE_AVAILABLE:
-        console.print("[red]✗[/red] snowflake-connector-python not installed. Run: pip install snowflake-connector-python")
+        console.print("[red][ERROR][/red] snowflake-connector-python not installed. Run: pip install snowflake-connector-python")
         return False
     
     # Get connection parameters
@@ -154,7 +154,7 @@ def save_to_snowflake_direct(df: pd.DataFrame, sink_config: Dict[str, Any], tabl
         account = account.replace('.snowflakecomputing.com', '')
     
     if not all([account, user, password]):
-        console.print("[red]✗[/red] Snowflake credentials missing. Set account, user, and password in config.")
+        console.print("[red][ERROR][/red] Snowflake credentials missing. Set account, user, and password in config.")
         return False
     
     try:
@@ -234,18 +234,18 @@ def save_to_snowflake_direct(df: pd.DataFrame, sink_config: Dict[str, Any], tabl
         cursor.close()
         conn.close()
         
-        console.print(f"[green]✓[/green] Successfully inserted {total_inserted} rows into Snowflake {database}.{schema}.{table_name}")
+        console.print(f"[green][OK][/green] Successfully inserted {total_inserted} rows into Snowflake {database}.{schema}.{table_name}")
         return True
         
     except Exception as e:
-        console.print(f"[red]✗[/red] Error connecting to Snowflake: {e}")
+        console.print(f"[red][ERROR][/red] Error connecting to Snowflake: {e}")
         return False
 
 
 def save_to_postgres(df: pd.DataFrame, sink_config: Dict[str, Any], table_name: str) -> bool:
     """Save DataFrame to PostgreSQL database."""
     if not SQLALCHEMY_AVAILABLE:
-        console.print("[red]✗[/red] sqlalchemy not installed. Run: pip install sqlalchemy psycopg2-binary")
+        console.print("[red][ERROR][/red] sqlalchemy not installed. Run: pip install sqlalchemy psycopg2-binary")
         return False
     
     # Get connection parameters
@@ -257,7 +257,7 @@ def save_to_postgres(df: pd.DataFrame, sink_config: Dict[str, Any], table_name: 
     schema = sink_config.get('schema', 'public')
     
     if not all([host, database, user, password]):
-        console.print("[red]✗[/red] PostgreSQL credentials missing. Set host, database, user, and password in config.")
+        console.print("[red][ERROR][/red] PostgreSQL credentials missing. Set host, database, user, and password in config.")
         return False
     
     try:
@@ -283,18 +283,18 @@ def save_to_postgres(df: pd.DataFrame, sink_config: Dict[str, Any], table_name: 
             method='multi'
         )
         
-        console.print(f"[green]✓[/green] Saved {len(df)} rows to PostgreSQL {database}.{schema}.{table_name}")
+        console.print(f"[green][OK][/green] Saved {len(df)} rows to PostgreSQL {database}.{schema}.{table_name}")
         return True
         
     except Exception as e:
-        console.print(f"[red]✗[/red] Error connecting to PostgreSQL: {e}")
+        console.print(f"[red][ERROR][/red] Error connecting to PostgreSQL: {e}")
         return False
 
 
 def save_to_mysql(df: pd.DataFrame, sink_config: Dict[str, Any], table_name: str) -> bool:
     """Save DataFrame to MySQL database."""
     if not SQLALCHEMY_AVAILABLE:
-        console.print("[red]✗[/red] sqlalchemy not installed. Run: pip install sqlalchemy pymysql")
+        console.print("[red][ERROR][/red] sqlalchemy not installed. Run: pip install sqlalchemy pymysql")
         return False
     
     # Get connection parameters
@@ -305,7 +305,7 @@ def save_to_mysql(df: pd.DataFrame, sink_config: Dict[str, Any], table_name: str
     password = sink_config.get('password')
     
     if not all([host, database, user, password]):
-        console.print("[red]✗[/red] MySQL credentials missing. Set host, database, user, and password in config.")
+        console.print("[red][ERROR][/red] MySQL credentials missing. Set host, database, user, and password in config.")
         return False
     
     try:
@@ -324,11 +324,11 @@ def save_to_mysql(df: pd.DataFrame, sink_config: Dict[str, Any], table_name: str
             method='multi'
         )
         
-        console.print(f"[green]✓[/green] Saved {len(df)} rows to MySQL {database}.{table_name}")
+        console.print(f"[green][OK][/green] Saved {len(df)} rows to MySQL {database}.{table_name}")
         return True
         
     except Exception as e:
-        console.print(f"[red]✗[/red] Error connecting to MySQL: {e}")
+        console.print(f"[red][ERROR][/red] Error connecting to MySQL: {e}")
         return False
 
 
@@ -393,7 +393,7 @@ TRUNCATE TABLE IF EXISTS {table};
 def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsheet_id: str, worksheet_name: str) -> bool:
     """Save DataFrame directly to Google Sheets."""
     if not GSPREAD_AVAILABLE:
-        console.print("[red]✗[/red] gspread not installed. Run: pip install gspread google-auth-oauthlib")
+        console.print("[red][ERROR][/red] gspread not installed. Run: pip install gspread google-auth-oauthlib")
         return False
     
     # Get credentials
@@ -401,7 +401,7 @@ def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsh
     credentials_json = sink_config.get('credentials_json')  # For inline JSON
     
     if not credentials_path and not credentials_json:
-        console.print("[red]✗[/red] Google Sheets credentials missing. Set credentials_path or credentials_json in config.")
+        console.print("[red][ERROR][/red] Google Sheets credentials missing. Set credentials_path or credentials_json in config.")
         return False
     
     try:
@@ -459,13 +459,13 @@ def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsh
             values = batch.values.tolist()
             worksheet.append_rows(values)
         
-        console.print(f"[green]✓[/green] Successfully wrote {len(df)} rows to Google Sheets: {spreadsheet.title} > {worksheet_name}")
+        console.print(f"[green][OK][/green] Successfully wrote {len(df)} rows to Google Sheets: {spreadsheet.title} > {worksheet_name}")
         console.print(f"[dim]Spreadsheet URL: https://docs.google.com/spreadsheets/d/{spreadsheet_id}[/dim]")
         return True
         
     except Exception as e:
         import traceback
-        console.print(f"[red]✗[/red] Error writing to Google Sheets: {type(e).__name__}: {str(e)}")
+        console.print(f"[red][ERROR][/red] Error writing to Google Sheets: {type(e).__name__}: {str(e)}")
         console.print(f"[dim]{traceback.format_exc()}[/dim]")
         return False
 
@@ -473,7 +473,7 @@ def save_to_googlesheets(df: pd.DataFrame, sink_config: Dict[str, Any], spreadsh
 def save_to_gcs_parquet(df: pd.DataFrame, sink_config: Dict[str, Any], bucket_name: str, blob_path: str) -> bool:
     """Save DataFrame to Google Cloud Storage as Parquet file."""
     if not GCS_AVAILABLE:
-        console.print("[red]✗[/red] google-cloud-storage or pyarrow not installed.")
+        console.print("[red][ERROR][/red] google-cloud-storage or pyarrow not installed.")
         console.print("[dim]Run: pip install google-cloud-storage pyarrow[/dim]")
         return False
     
@@ -507,12 +507,12 @@ def save_to_gcs_parquet(df: pd.DataFrame, sink_config: Dict[str, Any], bucket_na
         blob = bucket.blob(blob_path)
         blob.upload_from_file(parquet_buffer, content_type='application/octet-stream')
         
-        console.print(f"[green]✓[/green] Successfully uploaded {len(df)} rows to GCS: gs://{bucket_name}/{blob_path}")
+        console.print(f"[green][OK][/green] Successfully uploaded {len(df)} rows to GCS: gs://{bucket_name}/{blob_path}")
         console.print(f"[dim]File size: {file_size / 1024:.2f} KB[/dim]")
         return True
         
     except Exception as e:
-        console.print(f"[red]✗[/red] Error uploading to GCS: {e}")
+        console.print(f"[red][ERROR][/red] Error uploading to GCS: {e}")
         return False
 
 
@@ -540,7 +540,7 @@ def save_to_sink(df: pd.DataFrame, sink_name: str, sink_config: Dict[str, Any], 
             return save_to_snowflake_direct(df, sink_config, table_name)
         else:
             # Generate SQL file with data
-            console.print("[yellow]⚠[/yellow] No Snowflake credentials found. Generating SQL file instead.")
+            console.print("[yellow][!][/yellow] No Snowflake credentials found. Generating SQL file instead.")
             console.print("[dim]To enable auto-connect, set account, user, and password in config.[/dim]")
             
             sql = generate_snowflake_sql_with_data(df, sink_config, table_name)
@@ -548,7 +548,7 @@ def save_to_sink(df: pd.DataFrame, sink_name: str, sink_config: Dict[str, Any], 
             with open(output_file, 'w') as f:
                 f.write(sql)
             
-            console.print(f"[green]✓[/green] Generated Snowflake SQL script with data: {output_file}")
+            console.print(f"[green][OK][/green] Generated Snowflake SQL script with data: {output_file}")
             console.print(f"[dim]Preview (first 500 chars):[/dim]")
             console.print(sql[:500] + "..." if len(sql) > 500 else sql)
             return True
@@ -572,5 +572,5 @@ def save_to_sink(df: pd.DataFrame, sink_name: str, sink_config: Dict[str, Any], 
         return save_to_gcs_parquet(df, sink_config, bucket_name, blob_path)
     
     else:
-        console.print(f"[red]✗[/red] Unknown sink type: {sink_type}")
+        console.print(f"[red][ERROR][/red] Unknown sink type: {sink_type}")
         return False

@@ -59,29 +59,29 @@ def watch_source(
 
     sink_config = config_module.get_sink_config(sink)
     if not sink_config:
-        console.print(f"[red]✗[/red] Sink '{sink}' not found in configuration. Run '{get_config_command('view')}' to inspect available sinks.")
+        console.print(f"[red][ERROR][/red] Sink '{sink}' not found in configuration. Run '{get_config_command('view')}' to inspect available sinks.")
         return
 
     task_config = config_module.get_task_config(task)
     if not task_config:
-        console.print(f"[red]✗[/red] Task '{task}' not found in configuration. Define it under 'tasks' in sodacan.yaml.")
+        console.print(f"[red][ERROR][/red] Task '{task}' not found in configuration. Define it under 'tasks' in sodacan.yaml.")
         return
 
     if not source.exists():
-        console.print(f"[yellow]⚠[/yellow] Source file '{source}' does not exist yet. Waiting for it to appear...")
+        console.print(f"[yellow][!][/yellow] Source file '{source}' does not exist yet. Waiting for it to appear...")
 
     header: List[str] = []
     last_offset = 0
     output_field = task_config.get("output_field", "task_output")
 
-    console.print(f"[bold]👀 Watching[/bold] {source} → {sink} (task: {task})")
+    console.print(f"[bold][*] Watching[/bold] {source} → {sink} (task: {task})")
     console.print("[dim]Press Ctrl+C to stop.[/dim]" if not once else "[dim]Running single pass...[/dim]")
 
     try:
         while True:
             if not source.exists():
                 if once:
-                    console.print(f"[red]✗[/red] Source '{source}' not found. Exiting because '--once' was supplied.")
+                    console.print(f"[red][ERROR][/red] Source '{source}' not found. Exiting because '--once' was supplied.")
                     return
                 time.sleep(poll_interval)
                 continue
@@ -101,12 +101,12 @@ def watch_source(
 
             if new_lines:
                 records = _lines_to_records(header, new_lines)
-                console.print(f"[green]✓[/green] Detected {len(records)} new row(s)")
+                console.print(f"[green][OK][/green] Detected {len(records)} new row(s)")
 
                 for record in records:
                     task_output = ai.run_task_prompt(task_config, record, config)
                     if task_output is None:
-                        console.print("[red]✗[/red] Skipping row due to AI error.")
+                        console.print("[red][ERROR][/red] Skipping row due to AI error.")
                         continue
 
                     enriched = {**record, output_field: task_output}
@@ -116,7 +116,7 @@ def watch_source(
                         console.print(f"[dim]Saved enriched row ({enriched}).[/dim]")
 
             if once:
-                console.print("[bold green]✓[/bold green] Completed single pass.")
+                console.print("[bold green][OK][/bold green] Completed single pass.")
                 return
 
             time.sleep(poll_interval)

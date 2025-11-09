@@ -98,7 +98,7 @@ def _handle_ingest(args: List[str]) -> bool:
             i += 1
     
     if not source or not sink:
-        console.print("[red]✗[/red] Usage: ingest --source <path> --sink <name> [--table <table>]")
+        console.print("[red][ERROR][/red] Usage: ingest --source <path> --sink <name> [--table <table>]")
         console.print("[dim]Or (legacy): ingest <source> <sink>[/dim]")
         return False
     
@@ -108,7 +108,7 @@ def _handle_ingest(args: List[str]) -> bool:
 def _handle_build(args: List[str]) -> bool:
     """Handle build command."""
     if len(args) < 1:
-        console.print("[red]✗[/red] Usage: build <source>")
+        console.print("[red][ERROR][/red] Usage: build <source>")
         return False
     
     source = args[0]
@@ -120,7 +120,7 @@ def _handle_build(args: List[str]) -> bool:
 def _handle_config(args: List[str]) -> bool:
     """Handle config commands."""
     if not args:
-        console.print("[red]✗[/red] Usage: config <init|view|set> [args...]")
+        console.print("[red][ERROR][/red] Usage: config <init|view|set> [args...]")
         return False
     
     subcommand = args[0].lower()
@@ -132,13 +132,13 @@ def _handle_config(args: List[str]) -> bool:
         return True
     elif subcommand == "set":
         if len(args) < 3:
-            console.print("[red]✗[/red] Usage: config set <key> <value>")
+            console.print("[red][ERROR][/red] Usage: config set <key> <value>")
             return False
         key = args[1]
         value = args[2]
         return config.set_config(key, value)
     else:
-        console.print(f"[red]✗[/red] Unknown config subcommand: {subcommand}")
+        console.print(f"[red][ERROR][/red] Unknown config subcommand: {subcommand}")
         console.print("[yellow]Available: init, view, set[/yellow]")
         return False
 
@@ -167,7 +167,7 @@ def _handle_watch(args: List[str]) -> bool:
             try:
                 poll_interval = float(args[i + 1])
             except ValueError:
-                console.print(f"[red]✗[/red] Invalid poll-interval: {args[i + 1]}")
+                console.print(f"[red][ERROR][/red] Invalid poll-interval: {args[i + 1]}")
                 return False
             i += 2
         elif args[i] == "--once":
@@ -177,7 +177,7 @@ def _handle_watch(args: List[str]) -> bool:
             i += 1
     
     if not source or not sink or not task:
-        console.print("[red]✗[/red] Usage: watch --source <file> --sink <sink> --task <task> [--poll-interval <seconds>] [--once]")
+        console.print("[red][ERROR][/red] Usage: watch --source <file> --sink <sink> --task <task> [--poll-interval <seconds>] [--once]")
         return False
     
     watch_module.watch_source(
@@ -249,5 +249,5 @@ def launch_shell() -> None:
                 console.print(f"[yellow]Unknown command:[/yellow] {cmd}")
                 console.print("[dim]Type 'help' to see available commands.[/dim]")
         except Exception as e:
-            console.print(f"[red]✗[/red] Error executing command: {e}")
+            console.print(f"[red][ERROR][/red] Error executing command: {e}")
             console.print("[dim]Try 'help' for usage examples.[/dim]")

@@ -4,7 +4,7 @@
 
 An AI-powered, terminal-first workbench that makes data ingestion and transformation 10x faster for consultants and forward-deployed engineers.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -41,7 +41,7 @@ sodacan build messy_dump.csv
 sodacan shell
 ```
 
-## 📋 Commands
+## Commands
 
 ### Configuration Management
 
@@ -65,7 +65,7 @@ sodacan shell
 - `sodacan shell` - Open interactive multi-command environment
 - `sodacan i`, `sodacan b`, `sodacan w` - Short aliases for commands
 
-## 🎯 Demo Flow
+## Demo Flow
 
 ### Demo 1: The "No-Code" Magic
 ```bash
@@ -99,7 +99,7 @@ sodacan shell
 (sodacan) > exit
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### Two-Stage AI Pipeline
 
@@ -155,7 +155,7 @@ Sodacan uses a sophisticated two-stage AI pipeline for natural language processi
 - Set via: `sodacan config set preview.max_rows 50`
 - Applies to all preview displays
 
-## 📦 Tech Stack
+## Tech Stack
 
 ### Core
 - **Python 3.8+**
@@ -190,7 +190,7 @@ Sodacan uses a sophisticated two-stage AI pipeline for natural language processi
 - **Jinja2** - SQL script templating
 - **python-dotenv** - Environment variable management
 
-## 📝 Configuration
+## Configuration
 
 ### Example `sodacan.yaml`
 
@@ -280,7 +280,7 @@ Within the `build` REPL:
 - **save to <sink>**: Save to configured sink (supports multiple: `save to sink1 and sink2`)
 - **exit/quit**: Exit without saving
 
-## 🔒 Security
+## Security
 
 - No data leaves your environment except for AI API calls
 - Config files are local to your project
@@ -294,7 +294,7 @@ Within the `build` REPL:
 - **DATABASE_CONNECTORS.md** - Database connection guide
 - **INSTALL.md** - Installation instructions
 
-## 🚀 Advanced Features
+## Advanced Features
 
 ### Multi-Sink Saving
 ```bash
@@ -324,6 +324,6 @@ sodacan config set preview.max_rows 50
 sodacan config set preview.max_cols 15
 ```
 
-## 📝 License
+## License
 
 MIT

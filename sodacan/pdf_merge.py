@@ -34,7 +34,7 @@ except ImportError:
 def extract_tables_with_tabula(pdf_path: str) -> list:
     """Extract tables from PDF using tabula-py (programmatic)."""
     if not TABULA_AVAILABLE:
-        console.print("[yellow]⚠[/yellow] tabula-py not available, using fallback method")
+        console.print("[yellow][!][/yellow] tabula-py not available, using fallback method")
         return []
     
     try:
@@ -42,7 +42,7 @@ def extract_tables_with_tabula(pdf_path: str) -> list:
         tables = tabula.read_pdf(pdf_path, pages='all', multiple_tables=True)
         return [df for df in tables if df is not None and not df.empty]
     except Exception as e:
-        console.print(f"[yellow]⚠[/yellow] Tabula extraction failed: {e}")
+        console.print(f"[yellow][!][/yellow] Tabula extraction failed: {e}")
         return []
 
 
@@ -61,7 +61,7 @@ def extract_mda_text(pdf_path: str) -> str:
                     mda_text += text + "\n"
         return mda_text[:10000]  # Limit to 10k chars
     except Exception as e:
-        console.print(f"[yellow]⚠[/yellow] MD&A extraction failed: {e}")
+        console.print(f"[yellow][!][/yellow] MD&A extraction failed: {e}")
         return ""
 
 
@@ -85,7 +85,7 @@ def merge_10q_pdf(
     Returns:
         Merged DataFrame with new data from PDF
     """
-    console.print(f"[bold]📄 Processing 10-Q PDF: {s3_path}[/bold]")
+    console.print(f"[bold][*] Processing 10-Q PDF: {s3_path}[/bold]")
     console.print(f"[dim]Company: {company}, Quarter: {quarter}[/dim]\n")
     
     # Step 1: Download PDF from S3
@@ -108,7 +108,7 @@ def merge_10q_pdf(
     # Get task config
     task_config = get_task_config("merge_10Q")
     if not task_config:
-        console.print("[red]✗[/red] Task 'merge_10Q' not found in config")
+        console.print("[red][ERROR][/red] Task 'merge_10Q' not found in config")
         return None
     
     # Prepare PDF content for AI
@@ -130,7 +130,7 @@ def merge_10q_pdf(
     
     ai_response = run_task_prompt(task_config, payload, config)
     if not ai_response:
-        console.print("[red]✗[/red] AI extraction failed")
+        console.print("[red][ERROR][/red] AI extraction failed")
         return None
     
     # Parse JSON response
@@ -149,22 +149,22 @@ def merge_10q_pdf(
         # Convert to DataFrame
         pdf_df = pd.DataFrame(pdf_data)
         
-        console.print(f"[green]✓[/green] Extracted {len(pdf_df)} segments from PDF")
+        console.print(f"[green][OK][/green] Extracted {len(pdf_df)} segments from PDF")
         
         # Merge with existing DataFrame
         if df is None or df.empty:
             return pdf_df
         else:
             merged_df = pd.concat([df, pdf_df], ignore_index=True)
-            console.print(f"[green]✓[/green] Merged data: {len(df)} + {len(pdf_df)} = {len(merged_df)} rows")
+            console.print(f"[green][OK][/green] Merged data: {len(df)} + {len(pdf_df)} = {len(merged_df)} rows")
             return merged_df
             
     except json.JSONDecodeError as e:
-        console.print(f"[red]✗[/red] Failed to parse AI response as JSON: {e}")
+        console.print(f"[red][ERROR][/red] Failed to parse AI response as JSON: {e}")
         console.print(f"[dim]AI Response: {ai_response[:500]}...[/dim]")
         return None
     except Exception as e:
-        console.print(f"[red]✗[/red] Error processing PDF data: {e}")
+        console.print(f"[red][ERROR][/red] Error processing PDF data: {e}")
         return None
     finally:
         # Clean up downloaded file

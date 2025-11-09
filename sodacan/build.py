@@ -54,7 +54,7 @@ def show_dataframe_preview(df: pd.DataFrame):
     max_rows = preview_config["max_rows"]
     max_cols = preview_config["max_cols"]
     
-    console.print("\n[bold cyan]🤖 Preview of your data:[/bold cyan]")
+    console.print("\n[bold cyan][*] Preview of your data:[/bold cyan]")
     
     # Create table
     table = Table(show_header=True, header_style="bold magenta")
@@ -77,7 +77,7 @@ def show_dataframe_preview(df: pd.DataFrame):
 
 def build_interactive(source: str) -> bool:
     """Interactive REPL for data cleaning."""
-    console.print(f"[bold]🔧 Interactive Data Workbench[/bold]")
+    console.print(f"[bold][*] Interactive Data Workbench[/bold]")
     console.print(f"[dim]Loading: {source}[/dim]\n")
     
     # Load config
@@ -97,7 +97,7 @@ def build_interactive(source: str) -> bool:
         # It's a file path
         source_path = Path(source)
         if not source_path.exists():
-            console.print(f"[red]✗[/red] Source file or source name not found: {source}")
+            console.print(f"[red][ERROR][/red] Source file or source name not found: {source}")
             return False
         
         df = None
@@ -108,18 +108,18 @@ def build_interactive(source: str) -> bool:
             model_name = config.get("ai", {}).get("model", "gemini-2.5-flash")
             csv_data = extract_pdf_to_dataframe(str(source_path), model_name)
             if not csv_data:
-                console.print(f"[red]✗[/red] Could not extract data from PDF")
+                console.print(f"[red][ERROR][/red] Could not extract data from PDF")
                 return False
             
             # Parse CSV string into DataFrame
             from io import StringIO
             try:
                 df = pd.read_csv(StringIO(csv_data))
-                console.print(f"[green]✓[/green] Extracted {len(df)} rows from PDF")
+                console.print(f"[green][OK][/green] Extracted {len(df)} rows from PDF")
             except Exception as e:
                 # If CSV parsing fails, the PDF might not have tabular data
                 # Create a simple DataFrame with the extracted text
-                console.print(f"[yellow]⚠[/yellow] PDF doesn't contain tabular data. Creating text DataFrame...")
+                console.print(f"[yellow][!][/yellow] PDF doesn't contain tabular data. Creating text DataFrame...")
                 console.print(f"[dim]CSV parse error: {e}[/dim]")
                 # Try to create a DataFrame from the raw text
                 lines = csv_data.strip().split('\n')
@@ -133,7 +133,7 @@ def build_interactive(source: str) -> bool:
                 else:
                     # Not CSV format - create single-column DataFrame
                     df = pd.DataFrame({'content': [csv_data]})
-                console.print(f"[green]✓[/green] Created DataFrame with {len(df)} row(s) from PDF text")
+                console.print(f"[green][OK][/green] Created DataFrame with {len(df)} row(s) from PDF text")
         
         elif source_path.suffix.lower() == '.csv':
             encoding = config.get("source_defaults", {}).get("csv_encoding", "utf-8")
@@ -147,7 +147,7 @@ def build_interactive(source: str) -> bool:
                     except:
                         continue
                 if df is None:
-                    console.print(f"[red]✗[/red] Could not read CSV")
+                    console.print(f"[red][ERROR][/red] Could not read CSV")
                     return False
         
         elif source_path.suffix.lower() in ['.xlsx', '.xls']:
@@ -157,24 +157,24 @@ def build_interactive(source: str) -> bool:
             df = pd.read_json(source_path)
         
         else:
-            console.print(f"[red]✗[/red] Unsupported file type: {source_path.suffix}")
+            console.print(f"[red][ERROR][/red] Unsupported file type: {source_path.suffix}")
             return False
         
         if df is None or df.empty:
-            console.print(f"[red]✗[/red] No data loaded")
+            console.print(f"[red][ERROR][/red] No data loaded")
             return False
     
-    console.print(f"[green]✓[/green] Loaded {len(df)} rows\n")
+    console.print(f"[green][OK][/green] Loaded {len(df)} rows\n")
     
     # Initialize two-stage AI pipeline
     console.print("[dim]Initializing AI pipeline (Analyzer + Executor)...[/dim]")
     try:
         analyzer_session = start_analyzer_session()
         executor_session = start_executor_session()
-        console.print("[green]✓[/green] AI pipeline ready (two-stage: Analyzer → Executor)\n")
+        console.print("[green][OK][/green] AI pipeline ready (two-stage: Analyzer → Executor)\n")
         use_two_stage = True
     except Exception as e:
-        console.print(f"[yellow]⚠[/yellow] Could not initialize two-stage pipeline: {e}")
+        console.print(f"[yellow][!][/yellow] Could not initialize two-stage pipeline: {e}")
         console.print("[dim]Falling back to single-stage translation...[/dim]\n")
         use_two_stage = False
     
@@ -223,10 +223,10 @@ def build_interactive(source: str) -> bool:
                 if history_index > 0:
                     history_index -= 1
                     df = df_history[history_index].copy()
-                    console.print(f"[green]✓[/green] Undone. Reverted to state {history_index + 1}/{len(df_history)}")
+                    console.print(f"[green][OK][/green] Undone. Reverted to state {history_index + 1}/{len(df_history)}")
                     show_dataframe_preview(df)
                 else:
-                    console.print("[yellow]⚠[/yellow] Nothing to undo. Already at initial state.")
+                    console.print("[yellow][!][/yellow] Nothing to undo. Already at initial state.")
                 continue
             
             # Handle redo command
@@ -234,10 +234,10 @@ def build_interactive(source: str) -> bool:
                 if history_index < len(df_history) - 1:
                     history_index += 1
                     df = df_history[history_index].copy()
-                    console.print(f"[green]✓[/green] Redone. Restored to state {history_index + 1}/{len(df_history)}")
+                    console.print(f"[green][OK][/green] Redone. Restored to state {history_index + 1}/{len(df_history)}")
                     show_dataframe_preview(df)
                 else:
-                    console.print("[yellow]⚠[/yellow] Nothing to redo. Already at latest state.")
+                    console.print("[yellow][!][/yellow] Nothing to redo. Already at latest state.")
                 continue
             
             # Handle history command
@@ -284,12 +284,12 @@ def build_interactive(source: str) -> bool:
                         df = merged_df
                         df_history.append(df.copy())
                         history_index = len(df_history) - 1
-                        console.print("[green]✓[/green] Merge complete")
+                        console.print("[green][OK][/green] Merge complete")
                         show_dataframe_preview(df)
                     else:
-                        console.print("[red]✗[/red] Merge failed")
+                        console.print("[red][ERROR][/red] Merge failed")
                 else:
-                    console.print("[red]✗[/red] Invalid merge_10Q syntax. Use: merge_10Q \"s3://bucket/file.pdf\" --company \"Google\" --quarter \"Q2-2025\"")
+                    console.print("[red][ERROR][/red] Invalid merge_10Q syntax. Use: merge_10Q \"s3://bucket/file.pdf\" --company \"Google\" --quarter \"Q2-2025\"")
                 continue
             
             # Check for save command (supports multiple sinks: "save to sink1 and sink2")
@@ -334,22 +334,22 @@ def build_interactive(source: str) -> bool:
                 for sink_name, kwargs in sinks_to_save:
                     sink_config = get_sink_config(sink_name)
                     if not sink_config:
-                        console.print(f"[red]✗[/red] Sink '{sink_name}' not found in config")
+                        console.print(f"[red][ERROR][/red] Sink '{sink_name}' not found in config")
                         all_success = False
                         continue
                     
-                    console.print(f"\n[bold]💾 Saving to {sink_name}...[/bold]")
+                    console.print(f"\n[bold][*] Saving to {sink_name}...[/bold]")
                     success = save_to_sink(df, sink_name, sink_config, **kwargs)
                     if not success:
                         all_success = False
                 
                 if all_success:
-                    console.print(f"\n[bold green]✓ Success![/bold green] Data saved to all sinks")
+                    console.print(f"\n[bold green][OK] Success![/bold green] Data saved to all sinks")
                 
                 break
             
             # Natural language command - two-stage pipeline
-            console.print(f"[dim]🤖 Processing: {command}[/dim]")
+            console.print(f"[dim][*] Processing: {command}[/dim]")
             
             df_preview = format_dataframe_preview(df)
             df_schema = get_dataframe_schema(df)
@@ -366,14 +366,14 @@ def build_interactive(source: str) -> bool:
                     pandas_code = execute_instructions(executor_session, instructions, df_preview)
                     
                     if pandas_code == "SINK_COMMAND":
-                        console.print("[yellow]💡 Detected save command. Use 'save to <sink>' explicitly.[/yellow]")
+                        console.print("[yellow]Tip: Detected save command. Use 'save to <sink>' explicitly.[/yellow]")
                         continue
                     elif pandas_code == "ERROR":
-                        console.print("[red]✗[/red] Could not understand command. Try rephrasing.")
+                        console.print("[red][ERROR][/red] Could not understand command. Try rephrasing.")
                         continue
                     
                 except Exception as e:
-                    console.print(f"[yellow]⚠[/yellow] Two-stage pipeline error: {e}")
+                    console.print(f"[yellow][!][/yellow] Two-stage pipeline error: {e}")
                     console.print("[dim]Falling back to single-stage...[/dim]")
                     pandas_code = translate_natural_language_to_pandas(command, df_preview, config)
             else:
@@ -381,7 +381,7 @@ def build_interactive(source: str) -> bool:
                 pandas_code = translate_natural_language_to_pandas(command, df_preview, config)
             
             if not pandas_code:
-                console.print("[red]✗[/red] Could not translate command. Try rephrasing.")
+                console.print("[red][ERROR][/red] Could not translate command. Try rephrasing.")
                 continue
             
             console.print(f"[dim]Generated code:[/dim] [cyan]{pandas_code}[/cyan]")
@@ -403,14 +403,14 @@ def build_interactive(source: str) -> bool:
                     df = new_df
                     df_history.append(df.copy())
                     history_index = len(df_history) - 1
-                    console.print("[green]✓[/green] Command executed successfully")
+                    console.print("[green][OK][/green] Command executed successfully")
                     show_dataframe_preview(df)
                 else:
-                    console.print("[yellow]⚠[/yellow] Command executed but DataFrame unchanged")
+                    console.print("[yellow][!][/yellow] Command executed but DataFrame unchanged")
                     show_dataframe_preview(df)
                 
             except Exception as e:
-                console.print(f"[red]✗[/red] Error executing code: {e}")
+                console.print(f"[red][ERROR][/red] Error executing code: {e}")
                 console.print("[yellow]Try rephrasing your command[/yellow]")
         
         except KeyboardInterrupt:

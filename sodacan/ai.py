@@ -21,12 +21,12 @@ console = Console()
 def configure_gemini() -> bool:
     """Configure Gemini API, checking for API key."""
     if genai is None:
-        console.print("[red]✗[/red] google-generativeai not installed. Run 'pip install google-generativeai'.")
+        console.print("[red][ERROR][/red] google-generativeai not installed. Run 'pip install google-generativeai'.")
         return False
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        console.print("[red]✗[/red] GEMINI_API_KEY not found in environment. Set it with: export GEMINI_API_KEY=your_key")
+        console.print("[red][ERROR][/red] GEMINI_API_KEY not found in environment. Set it with: export GEMINI_API_KEY=your_key")
         console.print("[dim]Get your API key from: https://makersuite.google.com/app/apikey[/dim]")
         return False
     genai.configure(api_key=api_key)
@@ -36,7 +36,7 @@ def configure_gemini() -> bool:
 def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-2.5-flash") -> Optional[str]:
     """Extract structured data from a PDF using AI."""
     if pdfplumber is None:
-        console.print("[red]✗[/red] pdfplumber not installed. Run 'pip install pdfplumber'.")
+        console.print("[red][ERROR][/red] pdfplumber not installed. Run 'pip install pdfplumber'.")
         return None
 
     if not configure_gemini():
@@ -49,7 +49,7 @@ def extract_pdf_to_dataframe(pdf_path: str, model_name: str = "gemini-2.5-flash"
             for page in pdf.pages:
                 text_content += page.extract_text() or ""
     except Exception as e:
-        console.print(f"[red]✗[/red] Error reading PDF: {e}")
+        console.print(f"[red][ERROR][/red] Error reading PDF: {e}")
         return None
     
     # Use AI to structure the data
@@ -76,7 +76,7 @@ Text content:
         
         return csv_data
     except Exception as e:  # pragma: no cover - runtime safety
-        console.print(f"[red]✗[/red] Error calling Gemini: {e}")
+        console.print(f"[red][ERROR][/red] Error calling Gemini: {e}")
         return None
 
 
@@ -128,7 +128,7 @@ Return the pandas code to execute:"""
         
         return code.strip()
     except Exception as e:
-        console.print(f"[red]✗[/red] Error calling Gemini: {e}")
+        console.print(f"[red][ERROR][/red] Error calling Gemini: {e}")
         return None
 
 
@@ -143,7 +143,7 @@ def run_task_prompt(task_config: Dict[str, Any], payload: Dict[str, Any], config
     """Execute an AI task using the provided payload."""
     prompt_template = task_config.get("prompt_template")
     if not prompt_template:
-        console.print("[red]✗[/red] Task configuration missing 'prompt_template'.")
+        console.print("[red][ERROR][/red] Task configuration missing 'prompt_template'.")
         return None
 
     context = _SafeDict({**payload})
@@ -155,7 +155,7 @@ def run_task_prompt(task_config: Dict[str, Any], payload: Dict[str, Any], config
     try:
         prompt = prompt_template.format_map(context)
     except Exception as exc:  # pragma: no cover - formatting safeguard
-        console.print(f"[red]✗[/red] Error formatting prompt: {exc}")
+        console.print(f"[red][ERROR][/red] Error formatting prompt: {exc}")
         return None
 
     if not configure_gemini():
@@ -176,6 +176,6 @@ def run_task_prompt(task_config: Dict[str, Any], payload: Dict[str, Any], config
             text = text.split("\n", 1)[1].rsplit("\n", 1)[0]
         return text.strip()
     except Exception as exc:  # pragma: no cover - runtime safety
-        console.print(f"[red]✗[/red] Error calling Gemini: {exc}")
+        console.print(f"[red][ERROR][/red] Error calling Gemini: {exc}")
         return None
 

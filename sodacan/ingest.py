@@ -16,7 +16,7 @@ console = Console()
 
 def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> bool:
     """Ingest data from source and save to sink (non-interactive, headless)."""
-    console.print(f"[bold]📥 Ingesting[/bold] {source} → {sink}")
+    console.print(f"[bold][>] Ingesting[/bold] {source} → {sink}")
     if table_name:
         console.print(f"[dim]Table override: {table_name}[/dim]")
     
@@ -28,7 +28,7 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
     # Get sink config
     sink_config = get_sink_config(sink)
     if not sink_config:
-        console.print(f"[red]✗[/red] Sink '{sink}' not found in config. Run '{get_config_command('view')}' to see available sinks.")
+        console.print(f"[red][ERROR][/red] Sink '{sink}' not found in config. Run '{get_config_command('view')}' to see available sinks.")
         return False
     
     # Check if source is a configured source (like 'snowflake_prod') or a file path
@@ -41,13 +41,13 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
         df = load_from_source(source, source_config)
         if df is None:
             return False
-        console.print(f"[green]✓[/green] Loaded {len(df)} rows from {source}")
+        console.print(f"[green][OK][/green] Loaded {len(df)} rows from {source}")
     else:
         # It's a file path
         source_path = Path(source)
         if not source_path.exists():
-            console.print(f"[red]✗[/red] Source not found: '{source}' is not a configured source or valid file path")
-            console.print(f"[dim]💡 Use 'soda config' to see configured sources[/dim]")
+            console.print(f"[red][ERROR][/red] Source not found: '{source}' is not a configured source or valid file path")
+            console.print(f"[dim]Tip: Use 'soda config' to see configured sources[/dim]")
             return False
         
         # Handle different file types
@@ -62,11 +62,11 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
             from io import StringIO
             try:
                 df = pd.read_csv(StringIO(csv_data))
-                console.print(f"[green]✓[/green] Extracted {len(df)} rows from PDF")
+                console.print(f"[green][OK][/green] Extracted {len(df)} rows from PDF")
             except Exception as e:
                 # If CSV parsing fails, the PDF might not have tabular data
                 # Create a simple DataFrame with the extracted text
-                console.print(f"[yellow]⚠[/yellow] PDF doesn't contain tabular data. Creating text DataFrame...")
+                console.print(f"[yellow][!][/yellow] PDF doesn't contain tabular data. Creating text DataFrame...")
                 console.print(f"[dim]CSV parse error: {e}[/dim]")
                 # Try to create a DataFrame from the raw text
                 lines = csv_data.strip().split('\n')
@@ -80,7 +80,7 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
                 else:
                     # Not CSV format - create single-column DataFrame
                     df = pd.DataFrame({'content': [csv_data]})
-                console.print(f"[green]✓[/green] Created DataFrame with {len(df)} row(s) from PDF text")
+                console.print(f"[green][OK][/green] Created DataFrame with {len(df)} row(s) from PDF text")
         
         elif source_path.suffix.lower() == '.csv':
             encoding = config.get("source_defaults", {}).get("csv_encoding", "utf-8")
@@ -91,30 +91,30 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
                 for enc in ['latin-1', 'iso-8859-1', 'cp1252']:
                     try:
                         df = pd.read_csv(source_path, encoding=enc)
-                        console.print(f"[yellow]⚠[/yellow] Used encoding: {enc}")
+                        console.print(f"[yellow][!][/yellow] Used encoding: {enc}")
                         break
                     except:
                         continue
                 if df is None:
-                    console.print(f"[red]✗[/red] Could not read CSV with any encoding")
+                    console.print(f"[red][ERROR][/red] Could not read CSV with any encoding")
                     return False
             
-            console.print(f"[green]✓[/green] Loaded {len(df)} rows from CSV")
+            console.print(f"[green][OK][/green] Loaded {len(df)} rows from CSV")
         
         elif source_path.suffix.lower() in ['.xlsx', '.xls']:
             df = pd.read_excel(source_path)
-            console.print(f"[green]✓[/green] Loaded {len(df)} rows from Excel")
+            console.print(f"[green][OK][/green] Loaded {len(df)} rows from Excel")
         
         elif source_path.suffix.lower() == '.json':
             df = pd.read_json(source_path)
-            console.print(f"[green]✓[/green] Loaded {len(df)} rows from JSON")
+            console.print(f"[green][OK][/green] Loaded {len(df)} rows from JSON")
         
         else:
-            console.print(f"[red]✗[/red] Unsupported file type: {source_path.suffix}")
+            console.print(f"[red][ERROR][/red] Unsupported file type: {source_path.suffix}")
             return False
     
     if df is None or df.empty:
-        console.print(f"[red]✗[/red] No data loaded")
+        console.print(f"[red][ERROR][/red] No data loaded")
         return False
     
     # Show preview
@@ -138,13 +138,13 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
     console.print()
     
     # Save to sink
-    console.print(f"[bold]💾 Saving to {sink}...[/bold]")
+    console.print(f"[bold][*] Saving to {sink}...[/bold]")
     success = save_to_sink(df, sink, sink_config, table_name=table_name)
     
     if success:
-        console.print(f"\n[bold green]✓ Success![/bold green] Data ingested and saved to {sink}")
+        console.print(f"\n[bold green][OK] Success![/bold green] Data ingested and saved to {sink}")
         if sink == 'powerbi':
-            console.print("[dim]💡 Tip: Refresh your Power BI dashboard to see the new data[/dim]")
+            console.print("[dim]Tip: Refresh your Power BI dashboard to see the new data[/dim]")
     
     return success
 

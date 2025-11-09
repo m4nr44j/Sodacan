@@ -116,14 +116,14 @@ def init_config() -> bool:
     config_path = get_config_path()
     
     if config_path.exists():
-        console.print(f"[yellow]⚠[/yellow] {CONFIG_FILENAME} already exists. Use '{get_config_command('view')}' to see it.")
+        console.print(f"[yellow][!][/yellow] {CONFIG_FILENAME} already exists. Use '{get_config_command('view')}' to see it.")
         return False
     
     config = get_default_config()
     with open(config_path, 'w') as f:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
     
-    console.print(f"[green]✓[/green] Created {CONFIG_FILENAME}")
+    console.print(f"[green][OK][/green] Created {CONFIG_FILENAME}")
     return True
 
 
@@ -132,7 +132,7 @@ def load_config() -> Dict[str, Any]:
     config_path = get_config_path()
     
     if not config_path.exists():
-        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run '{get_config_command('init')}' first.")
+        console.print(f"[red][ERROR][/red] {CONFIG_FILENAME} not found. Run '{get_config_command('init')}' first.")
         return {}
     
     with open(config_path, 'r') as f:
@@ -151,7 +151,7 @@ def view_config() -> None:
     config_path = get_config_path()
     
     if not config_path.exists():
-        console.print(f"[red]✗[/red] {CONFIG_FILENAME} not found. Run '{get_config_command('init')}' first.")
+        console.print(f"[red][ERROR][/red] {CONFIG_FILENAME} not found. Run '{get_config_command('init')}' first.")
         return
     
     with open(config_path, 'r') as f:
@@ -196,7 +196,7 @@ def set_config(key: str, value: str) -> bool:
     current[final_key] = parsed_value
     
     save_config(config)
-    console.print(f"[green]✓[/green] Set {key} = {parsed_value}")
+    console.print(f"[green][OK][/green] Set {key} = {parsed_value}")
     return True
 
 
