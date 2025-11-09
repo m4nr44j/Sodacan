@@ -43,8 +43,8 @@ load_to_*.sql
 .env
 
 # Data files (optional - uncomment if you don't want to track data)
-# *.csv
-# *.xlsx
-# *.pdf
-# *.json
+*.csv
+*.xlsx
+*.pdf
+*.json
 

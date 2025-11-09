@@ -41,14 +41,19 @@ INTRO_LOGO = r"""
 """
 
 
-def _render_intro() -> None:
-    """Display a splash screen with top commands and aliases."""
+def _render_logo() -> None:
+    """Display the sodacan logo."""
     console.print(
         Panel(
             Align.center(Text(INTRO_LOGO.rstrip() + "\n", style="bold cyan")),
             border_style="cyan",
         )
     )
+
+
+def _render_intro() -> None:
+    """Display a splash screen with top commands and aliases."""
+    _render_logo()
 
     table = Table.grid(padding=(0, 2))
     table.add_column("Command", style="bold")
@@ -154,7 +159,10 @@ def build_alias(
 @app.callback()
 def main(ctx: typer.Context):
     """sodacan: The AI Data Workbench"""
-    if ctx.invoked_subcommand is None:
+    # Display logo on all commands
+    if ctx.invoked_subcommand is not None:
+        _render_logo()
+    else:
         _render_intro()
 
 @app.command()
