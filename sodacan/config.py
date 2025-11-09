@@ -39,6 +39,10 @@ def get_default_config() -> Dict[str, Any]:
         "source_defaults": {
             "csv_encoding": "utf-8"
         },
+        "preview": {
+            "max_rows": 20,
+            "max_cols": 10
+        },
         "sinks": {
             "powerbi": {
                 "type": "sqlite",
@@ -214,4 +218,14 @@ def get_task_config(task_name: str) -> Optional[Dict[str, Any]]:
         # Allow simple string prompts for quick tasks
         return {"prompt_template": task_config, "output_field": "task_output"}
     return None
+
+
+def get_preview_config() -> Dict[str, int]:
+    """Get preview configuration (max_rows, max_cols)."""
+    config = load_config()
+    preview_config = config.get("preview", {})
+    return {
+        "max_rows": preview_config.get("max_rows", 20),
+        "max_cols": preview_config.get("max_cols", 10)
+    }
 

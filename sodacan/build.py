@@ -1,5 +1,6 @@
 """Build command implementation with interactive REPL"""
 
+from typing import Optional
 import pandas as pd
 import sys
 from pathlib import Path
@@ -7,7 +8,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
-from sodacan.config import load_config, get_sink_config
+from sodacan.config import load_config, get_sink_config, get_preview_config
 from sodacan.ai import translate_natural_language_to_pandas, extract_pdf_to_dataframe
 from sodacan.sinks import save_to_sink
 
@@ -19,8 +20,14 @@ from executor import start_executor_session, execute_instructions
 console = Console()
 
 
-def format_dataframe_preview(df: pd.DataFrame, max_rows: int = 20, max_cols: int = 8) -> str:
+def format_dataframe_preview(df: pd.DataFrame, max_rows: Optional[int] = None, max_cols: Optional[int] = None) -> str:
     """Format DataFrame as a string preview."""
+    # Get preview config if not provided
+    if max_rows is None or max_cols is None:
+        preview_config = get_preview_config()
+        max_rows = max_rows or preview_config["max_rows"]
+        max_cols = max_cols or preview_config["max_cols"]
+    
     preview_df = df.head(max_rows)
     
     # Limit columns for display
@@ -40,25 +47,30 @@ def get_dataframe_schema(df: pd.DataFrame) -> str:
 
 def show_dataframe_preview(df: pd.DataFrame):
     """Display DataFrame in a nice table format."""
+    # Get preview config
+    preview_config = get_preview_config()
+    max_rows = preview_config["max_rows"]
+    max_cols = preview_config["max_cols"]
+    
     console.print("\n[bold cyan]🤖 Preview of your data:[/bold cyan]")
     
     # Create table
     table = Table(show_header=True, header_style="bold magenta")
     
     # Limit columns for display
-    display_cols = df.columns[:10].tolist()
+    display_cols = df.columns[:max_cols].tolist()
     for col in display_cols:
         table.add_column(str(col), overflow="fold")
     
     # Add rows
-    for idx, row in df.head(20).iterrows():
+    for idx, row in df.head(max_rows).iterrows():
         table.add_row(*[str(val)[:30] if pd.notna(val) else "NaN" for val in row[display_cols].values])
     
     console.print(table)
     console.print(f"[dim]Shape: {df.shape[0]} rows × {df.shape[1]} columns[/dim]")
     
-    if len(df.columns) > 10:
-        console.print(f"[dim]... and {len(df.columns) - 10} more columns[/dim]")
+    if len(df.columns) > max_cols:
+        console.print(f"[dim]... and {len(df.columns) - max_cols} more columns[/dim]")
 
 
 def build_interactive(source: str) -> bool:

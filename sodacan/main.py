@@ -119,9 +119,9 @@ app.add_typer(cfg_app, name="cfg")
 
 @app.command()
 def ingest(
-    source: str = typer.Option(..., "--source", help="Source file path (PDF, CSV, Excel, JSON)"),
-    sink: str = typer.Option(..., "--sink", help="Sink name from config (e.g., 'powerbi', 'snowflake')"),
-    table: str = typer.Option(None, "--table", help="Override table name (for database sinks)")
+    source: str = typer.Argument(..., help="Source file path (PDF, CSV, Excel, JSON)"),
+    sink: str = typer.Argument(..., help="Sink name from config (e.g., 'powerbi', 'snowflake')"),
+    table: str = typer.Option(None, "--table", help="Override table name (for database sinks)"),
 ):
     """Ingest data from source and save to configured sink (non-interactive, headless)."""
     ingest_module.ingest_data(source, sink, table_name=table)
@@ -129,9 +129,9 @@ def ingest(
 
 @app.command("i", help="Alias for 'ingest'", hidden=True)
 def ingest_alias(
-    source: str = typer.Option(..., "--source", help="Source file path (PDF, CSV, Excel, JSON)"),
-    sink: str = typer.Option(..., "--sink", help="Sink name from config (e.g., 'powerbi', 'snowflake')"),
-    table: str = typer.Option(None, "--table", help="Override table name (for database sinks)")
+    source: str = typer.Argument(..., help="Source file path (PDF, CSV, Excel, JSON)"),
+    sink: str = typer.Argument(..., help="Sink name from config (e.g., 'powerbi', 'snowflake')"),
+    table: str = typer.Option(None, "--table", help="Override table name (for database sinks)"),
 ) -> None:
     ingest(source=source, sink=sink, table=table)
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-from sodacan.config import load_config, get_sink_config, get_config_command
+from sodacan.config import load_config, get_sink_config, get_config_command, get_preview_config
 from sodacan.ai import extract_pdf_to_dataframe
 from sodacan.sinks import save_to_sink
 
@@ -106,16 +106,24 @@ def ingest_data(source: str, sink: str, table_name: Optional[str] = None) -> boo
         return False
     
     # Show preview
+    preview_config = get_preview_config()
+    max_rows = preview_config["max_rows"]
+    max_cols = preview_config["max_cols"]
+    
     console.print("\n[bold]Preview:[/bold]")
     table = Table(show_header=True, header_style="bold magenta")
-    for col in df.columns[:5]:  # Show first 5 columns
+    display_cols = df.columns[:max_cols].tolist()
+    for col in display_cols:
         table.add_column(col, overflow="fold")
     
-    for idx, row in df.head(20).iterrows():
-        table.add_row(*[str(val)[:30] for val in row.values[:5]])
+    for idx, row in df.head(max_rows).iterrows():
+        table.add_row(*[str(val)[:30] for val in row[display_cols].values])
     
     console.print(table)
-    console.print(f"[dim]Shape: {df.shape[0]} rows × {df.shape[1]} columns[/dim]\n")
+    console.print(f"[dim]Shape: {df.shape[0]} rows × {df.shape[1]} columns[/dim]")
+    if len(df.columns) > max_cols:
+        console.print(f"[dim]... and {len(df.columns) - max_cols} more columns[/dim]")
+    console.print()
     
     # Save to sink
     console.print(f"[bold]💾 Saving to {sink}...[/bold]")
