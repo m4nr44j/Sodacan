@@ -79,6 +79,7 @@ def watch_source(
     is_pass_through = task == "pass_through" or task_config.get("pass_through", False)
 
     console.print(f"[bold][*] Watching[/bold] {source} → {sink} (task: {task})")
+    console.print(f"[dim]Mode: {'append new rows' if append else 'replace entire dataset'} every {poll_interval}s[/dim]")
     console.print("[dim]Press Ctrl+C to stop.[/dim]" if not once else "[dim]Running single pass...[/dim]")
 
     try:
@@ -95,37 +96,66 @@ def watch_source(
                 if not header:
                     time.sleep(poll_interval)
                     continue
-                with source.open("r", encoding="utf-8", newline="") as handle:
-                    handle.seek(0, 2)
-                    last_offset = handle.tell()
+                if append:
+                    # For append mode, track offset to only process new rows
+                    with source.open("r", encoding="utf-8", newline="") as handle:
+                        handle.seek(0, 2)
+                        last_offset = handle.tell()
+                else:
+                    # For replace mode, always read from the beginning
+                    last_offset = 0
                 continue
 
-            new_lines = _read_new_lines(source, last_offset)
-            last_offset = source.stat().st_size
+            if append:
+                # Append mode: only process new rows
+                new_lines = _read_new_lines(source, last_offset)
+                last_offset = source.stat().st_size
+            else:
+                # Replace mode: read entire file every time
+                console.print(f"[dim]Reading entire file...[/dim]")
+                with source.open("r", encoding="utf-8", newline="") as handle:
+                    lines = handle.readlines()[1:]  # Skip header
+                    new_lines = [line for line in lines if line.strip()]
 
             if new_lines:
                 records = _lines_to_records(header, new_lines)
-                console.print(f"[green][OK][/green] Detected {len(records)} new row(s)")
+                console.print(f"[green][OK][/green] Processing {len(records)} row(s)")
 
-                for record in records:
-                    if is_pass_through:
-                        # Pass-through: no AI call, just use the record as-is
-                        enriched = record
-                    else:
-                        # Regular task: call AI to enrich the record
-                        task_output = ai.run_task_prompt(task_config, record, config)
-                        if task_output is None:
-                            console.print("[red][ERROR][/red] Skipping row due to AI error.")
-                            continue
-                        enriched = {**record, output_field: task_output}
+                if append:
+                    # Append mode: process each row individually
+                    for record in records:
+                        if is_pass_through:
+                            enriched = record
+                        else:
+                            task_output = ai.run_task_prompt(task_config, record, config)
+                            if task_output is None:
+                                console.print("[red][ERROR][/red] Skipping row due to AI error.")
+                                continue
+                            enriched = {**record, output_field: task_output}
+                        
+                        df = pd.DataFrame([enriched])
+                        success = sinks.save_to_sink(df, sink, sink_config, mode='append')
+                        if success:
+                            console.print(f"[dim]Appended row to {sink}[/dim]")
+                else:
+                    # Replace mode: process all rows as a batch
+                    all_enriched = []
+                    for record in records:
+                        if is_pass_through:
+                            enriched = record
+                        else:
+                            task_output = ai.run_task_prompt(task_config, record, config)
+                            if task_output is None:
+                                console.print("[red][ERROR][/red] Skipping row due to AI error.")
+                                continue
+                            enriched = {**record, output_field: task_output}
+                        all_enriched.append(enriched)
                     
-                    df = pd.DataFrame([enriched])
-                    # Use append or replace mode based on parameter
-                    mode = 'append' if append else 'replace'
-                    success = sinks.save_to_sink(df, sink, sink_config, mode=mode)
-                    if success:
-                        action = "Appended" if append else "Saved"
-                        console.print(f"[dim]{action} row to {sink}[/dim]")
+                    if all_enriched:
+                        df = pd.DataFrame(all_enriched)
+                        success = sinks.save_to_sink(df, sink, sink_config, mode='replace')
+                        if success:
+                            console.print(f"[green][OK][/green] Updated {sink} with {len(df)} rows")
 
             if once:
                 console.print("[bold green][OK][/bold green] Completed single pass.")
